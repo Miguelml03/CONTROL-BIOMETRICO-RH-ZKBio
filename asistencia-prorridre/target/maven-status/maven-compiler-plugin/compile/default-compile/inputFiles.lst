@@ -1,0 +1,16 @@
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\MarcacionRepository.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\config\AppConfig.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\entity\EstadoMarcacion.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\EstadoMarcacionRepository.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\web\MarcacionController.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\TransaccionDto.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\entity\Marcacion.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\MarcacionService.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\PaginaTransacciones.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\ZkBioClient.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\LoginRequest.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\LoginResponse.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\AsistenciaApplication.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\web\dto\MarcacionResponse.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\scheduler\LectorMarcaciones.java
+D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\ZkBioTokenManager.java

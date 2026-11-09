@@ -1,0 +1,16 @@
+pe\gob\prorridre\asistencia\scheduler\LectorMarcaciones.class
+pe\gob\prorridre\asistencia\domain\repository\MarcacionRepository.class
+pe\gob\prorridre\asistencia\zkbio\dto\LoginResponse.class
+pe\gob\prorridre\asistencia\zkbio\dto\PaginaTransacciones.class
+pe\gob\prorridre\asistencia\domain\entity\Marcacion.class
+pe\gob\prorridre\asistencia\web\dto\MarcacionResponse.class
+pe\gob\prorridre\asistencia\service\MarcacionService.class
+pe\gob\prorridre\asistencia\zkbio\dto\TransaccionDto.class
+pe\gob\prorridre\asistencia\AsistenciaApplication.class
+pe\gob\prorridre\asistencia\config\AppConfig.class
+pe\gob\prorridre\asistencia\zkbio\ZkBioClient.class
+pe\gob\prorridre\asistencia\domain\repository\EstadoMarcacionRepository.class
+pe\gob\prorridre\asistencia\web\MarcacionController.class
+pe\gob\prorridre\asistencia\zkbio\dto\LoginRequest.class
+pe\gob\prorridre\asistencia\zkbio\ZkBioTokenManager.class
+pe\gob\prorridre\asistencia\domain\entity\EstadoMarcacion.class

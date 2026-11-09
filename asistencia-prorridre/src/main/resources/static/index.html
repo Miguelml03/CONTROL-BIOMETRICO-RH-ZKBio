@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRORRIDRE – Control de Asistencia</title>
+    <style>
+        /* ================================================================
+           ESTILOS GLOBALES – PRORRIDRE Control de Asistencia
+           Paleta sobria: azules institucionales + grises neutros
+        ================================================================ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --azul-oscuro:     #1a3a5c;
+            --azul-medio:      #2563a8;
+            --azul-claro:      #e8f0fb;
+            --gris-fondo:      #f4f6f9;
+            --gris-borde:      #dde3ec;
+            --gris-texto:      #4a5568;
+            --blanco:          #ffffff;
+            --verde-ok:        #2e7d32;
+            --verde-fondo:     #e8f5e9;
+            --naranja:         #e65100;
+            --naranja-fondo:   #fff3e0;
+            --celeste:         #0277bd;
+            --celeste-fondo:   #e1f5fe;
+            --morado:          #6a1b9a;
+            --morado-fondo:    #f3e5f5;
+            --gris-desc:       #546e7a;
+            --gris-desc-fondo: #eceff1;
+            --sombra:          0 2px 8px rgba(0,0,0,.10);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--gris-fondo);
+            color: var(--gris-texto);
+            min-height: 100vh;
+        }
+
+        /* ── Cabecera ─────────────────────────────────────────────────── */
+        header {
+            background: var(--azul-oscuro);
+            color: var(--blanco);
+            padding: 18px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--sombra);
+        }
+
+        .logo-area { display: flex; align-items: center; gap: 14px; }
+
+        .logo-icon {
+            width: 44px; height: 44px;
+            background: var(--azul-medio);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+        }
+
+        header h1 { font-size: 1.25rem; font-weight: 600; line-height: 1.2; }
+        header h1 small { display: block; font-size: .8rem; font-weight: 400; opacity: .8; }
+
+        .estado-conexion {
+            display: flex; align-items: center; gap: 8px;
+            font-size: .85rem; opacity: .9;
+        }
+
+        .pulso {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #4caf50;
+            animation: pulsar 1.5s infinite;
+        }
+        .pulso.error { background: #e53935; animation: none; }
+
+        @keyframes pulsar {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: .5; transform: scale(.8); }
+        }
+
+        /* ── Contenedor principal ─────────────────────────────────────── */
+        main { max-width: 1200px; margin: 0 auto; padding: 28px 20px; }
+
+        /* ── Barra de estado rápido ───────────────────────────────────── */
+        .barra-estado {
+            background: var(--blanco);
+            border: 1px solid var(--gris-borde);
+            border-radius: 10px;
+            padding: 14px 22px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            box-shadow: var(--sombra);
+        }
+
+        .barra-estado .info { font-size: .9rem; }
+        .barra-estado .info strong { color: var(--azul-oscuro); }
+
+        .actualizando {
+            font-size: .8rem;
+            color: var(--azul-medio);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .spinner {
+            width: 14px; height: 14px;
+            border: 2px solid var(--azul-claro);
+            border-top-color: var(--azul-medio);
+            border-radius: 50%;
+            animation: girar .7s linear infinite;
+            display: none;
+        }
+        .spinner.visible { display: block; }
+
+        @keyframes girar { to { transform: rotate(360deg); } }
+
+        /* ── Leyenda de estados ───────────────────────────────────────── */
+        .leyenda {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: .78rem;
+            font-weight: 600;
+        }
+
+        .badge::before {
+            content: '';
+            width: 8px; height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Un badge por cada estado – mismos colores que las filas */
+        .badge.entrada          { background: var(--verde-fondo);   color: var(--verde-ok);  }
+        .badge.entrada::before  { background: var(--verde-ok);  }
+
+        .badge.salida-refrigerio         { background: var(--naranja-fondo);  color: var(--naranja); }
+        .badge.salida-refrigerio::before { background: var(--naranja); }
+
+        .badge.regreso-refrigerio         { background: var(--celeste-fondo);  color: var(--celeste); }
+        .badge.regreso-refrigerio::before { background: var(--celeste); }
+
+        .badge.salida-final         { background: var(--morado-fondo);  color: var(--morado); }
+        .badge.salida-final::before { background: var(--morado); }
+
+        .badge.desconocido         { background: var(--gris-desc-fondo); color: var(--gris-desc); }
+        .badge.desconocido::before { background: var(--gris-desc); }
+
+        /* ── Tabla de marcaciones ─────────────────────────────────────── */
+        .tarjeta {
+            background: var(--blanco);
+            border: 1px solid var(--gris-borde);
+            border-radius: 10px;
+            box-shadow: var(--sombra);
+            overflow: hidden;
+        }
+
+        .tarjeta-cabecera {
+            padding: 16px 22px;
+            background: var(--azul-oscuro);
+            color: var(--blanco);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tarjeta-cabecera h2 { font-size: 1rem; font-weight: 600; }
+
+        .total-badge {
+            background: rgba(255,255,255,.2);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: .8rem;
+        }
+
+        .tabla-wrapper { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .88rem;
+        }
+
+        thead { background: var(--azul-claro); }
+
+        th {
+            padding: 11px 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--azul-oscuro);
+            white-space: nowrap;
+            border-bottom: 2px solid var(--gris-borde);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--gris-borde);
+            transition: background .15s;
+        }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #f7faff; }
+
+        /* Fila nueva resaltada brevemente */
+        tbody tr.nueva {
+            animation: resaltarNueva 2s ease-out;
+        }
+
+        @keyframes resaltarNueva {
+            0%   { background: #fff9c4; }
+            100% { background: transparent; }
+        }
+
+        td {
+            padding: 10px 14px;
+            vertical-align: middle;
+            color: var(--gris-texto);
+        }
+
+        .td-id    { font-family: monospace; font-size: .82rem; color: #888; }
+        .td-emp   { font-weight: 600; color: var(--azul-oscuro); }
+        .td-emp small { display: block; font-weight: 400; color: #718096; }
+        .td-hora  { font-family: monospace; font-size: .9rem; }
+
+        /* ── Chips de estado en celdas ────────────────────────────────── */
+        .chip {
+            display: inline-block;
+            padding: 4px 11px;
+            border-radius: 14px;
+            font-size: .78rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .chip.entrada          { background: var(--verde-fondo);    color: var(--verde-ok);  }
+        .chip.salida-refrigerio { background: var(--naranja-fondo); color: var(--naranja);   }
+        .chip.regreso-refrigerio { background: var(--celeste-fondo);color: var(--celeste);   }
+        .chip.salida-final     { background: var(--morado-fondo);   color: var(--morado);    }
+        .chip.desconocido      { background: var(--gris-desc-fondo);color: var(--gris-desc); }
+
+        /* ── Ícono de verificación ────────────────────────────────────── */
+        .verif {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: .82rem; color: #666;
+        }
+
+        /* ── Estado vacío / error ─────────────────────────────────────── */
+        .estado-vacio {
+            padding: 48px 20px;
+            text-align: center;
+            color: #aaa;
+        }
+        .estado-vacio .icono { font-size: 2.5rem; margin-bottom: 10px; }
+        .estado-vacio p { font-size: .9rem; }
+
+        /* ── Pie de página ────────────────────────────────────────────── */
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: .78rem;
+            color: #aaa;
+            margin-top: 10px;
+        }
+
+        /* ── Responsivo ───────────────────────────────────────────────── */
+        @media (max-width: 640px) {
+            header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            header h1 { font-size: 1.1rem; }
+            th, td { padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CABECERA
+══════════════════════════════════════════════════════════════ -->
+<header>
+    <div class="logo-area">
+        <div class="logo-icon">🏛️</div>
+        <h1>
+            Control de Asistencia
+            <small>PRORRIDRE PUNO — Fase 1</small>
+        </h1>
+    </div>
+    <div class="estado-conexion">
+        <div class="pulso" id="pulso"></div>
+        <span id="txt-conexion">Conectando…</span>
+    </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CONTENIDO PRINCIPAL
+══════════════════════════════════════════════════════════════ -->
+<main>
+
+    <!-- ── Barra de estado rápido ──────────────────────────────── -->
+    <div class="barra-estado">
+        <div class="info">
+            Última actualización: <strong id="ultima-act">–</strong>
+            &nbsp;·&nbsp;
+            Próxima en: <strong id="cuenta-regresiva">10</strong> s
+        </div>
+        <div class="actualizando">
+            <div class="spinner" id="spinner"></div>
+            <span id="txt-act">Esperando datos…</span>
+        </div>
+    </div>
+
+    <!-- ── Leyenda de colores ──────────────────────────────────── -->
+    <div class="leyenda" id="leyenda">
+        <span class="badge entrada">Entrada</span>
+        <span class="badge salida-refrigerio">Salida a refrigerio</span>
+        <span class="badge regreso-refrigerio">Regreso de refrigerio</span>
+        <span class="badge salida-final">Salida final</span>
+        <span class="badge desconocido">Desconocido</span>
+    </div>
+
+    <!-- ── Tabla de últimas 50 marcaciones ────────────────────── -->
+    <div class="tarjeta">
+        <div class="tarjeta-cabecera">
+            <h2>📋 Últimas 50 marcaciones</h2>
+            <span class="total-badge" id="badge-total">–</span>
+        </div>
+        <div class="tabla-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>ID Reloj</th>
+                        <th>Empleado</th>
+                        <th>Fecha / Hora</th>
+                        <th>Estado</th>
+                        <th>Verificación</th>
+                        <th>Terminal</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpo-tabla">
+                    <!-- Las filas se inyectan por JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        <div class="estado-vacio" id="estado-vacio" style="display:none">
+            <div class="icono">🔍</div>
+            <p>No hay marcaciones disponibles todavía.<br>
+               El lector consultará el reloj en breve.</p>
+        </div>
+    </div>
+
+</main>
+
+<footer>
+    Sistema de Control de Asistencia · PRORRIDRE PUNO · Solo lectura · Ley 29733
+</footer>
+
+<!-- ══════════════════════════════════════════════════════════════
+     JAVASCRIPT – Actualización automática cada 10 s
+══════════════════════════════════════════════════════════════ -->
+<script>
+    "use strict";
+
+    /* ── Configuración ────────────────────────────────────────── */
+    const INTERVALO_SEG  = 10;          // refrescar cada 10 s
+    const API_URL        = "/api/marcaciones/ultimas";
+    const FMT_HORA       = new Intl.DateTimeFormat("es-PE", {
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+
+    /* ── Estado interno ───────────────────────────────────────── */
+    let segundosRestantes = INTERVALO_SEG;
+    let ultimosIds        = new Set();   // para detectar filas nuevas
+
+    /* ── Elementos del DOM ────────────────────────────────────── */
+    const $cuerpoTabla   = document.getElementById("cuerpo-tabla");
+    const $estadoVacio   = document.getElementById("estado-vacio");
+    const $badgeTotal    = document.getElementById("badge-total");
+    const $spinner       = document.getElementById("spinner");
+    const $ultimaAct     = document.getElementById("ultima-act");
+    const $cuentaAtras   = document.getElementById("cuenta-regresiva");
+    const $txtAct        = document.getElementById("txt-act");
+    const $pulso         = document.getElementById("pulso");
+    const $txtConexion   = document.getElementById("txt-conexion");
+
+    /* ── Función principal de carga ───────────────────────────── */
+    async function cargarMarcaciones() {
+        $spinner.classList.add("visible");
+        $txtAct.textContent = "Actualizando…";
+
+        try {
+            const resp = await fetch(API_URL, { cache: "no-store" });
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+            const datos = await resp.json();
+            renderizarTabla(datos);
+
+            // Indicadores de estado: OK
+            $pulso.classList.remove("error");
+            $txtConexion.textContent = "En línea";
+            $ultimaAct.textContent   = FMT_HORA.format(new Date());
+            $txtAct.textContent      = datos.length + " marcaciones cargadas";
+
+        } catch (err) {
+            // Indicadores de estado: ERROR
+            $pulso.classList.add("error");
+            $txtConexion.textContent = "Sin conexión";
+            $txtAct.textContent      = "Error al cargar: " + err.message;
+            console.error("[PRORRIDRE] Error cargando marcaciones:", err);
+        } finally {
+            $spinner.classList.remove("visible");
+            segundosRestantes = INTERVALO_SEG;
+        }
+    }
+
+    /* ── Renderizado de la tabla ──────────────────────────────── */
+    function renderizarTabla(marcaciones) {
+        if (!marcaciones || marcaciones.length === 0) {
+            $cuerpoTabla.innerHTML = "";
+            $estadoVacio.style.display  = "block";
+            $badgeTotal.textContent     = "0 registros";
+            return;
+        }
+
+        $estadoVacio.style.display = "none";
+        $badgeTotal.textContent    = marcaciones.length + " registros";
+
+        const idsNuevos = new Set(marcaciones.map(m => m.id));
+
+        const html = marcaciones.map((m, i) => {
+            const esNueva  = !ultimosIds.has(m.id);
+            const claseNueva = esNueva ? " nueva" : "";
+
+            // Icono de verificación
+            const iconoVerif = m.tipoVerificacion === "Huella"  ? "🖐️" :
+                               m.tipoVerificacion === "Rostro"  ? "👤" : "❓";
+
+            return `
+            <tr class="${claseNueva}">
+                <td class="td-id">${i + 1}</td>
+                <td class="td-id">${escHtml(m.id)}</td>
+                <td class="td-emp">
+                    ${escHtml([m.firstName, m.lastName].filter(Boolean).join(" ") || "Nombre no disponible")}
+                    <small>${escHtml(m.empCode)}</small>
+                </td>
+                <td class="td-hora">${escHtml(m.punchTime)}</td>
+                <td>
+                    <span class="chip ${escHtml(m.etiquetaCss)}">
+                        ${escHtml(m.significadoReal)}
+                    </span>
+                </td>
+                <td>
+                    <span class="verif">
+                        ${iconoVerif} ${escHtml(m.tipoVerificacion)}
+                    </span>
+                </td>
+                <td class="td-id">${escHtml(m.terminalSn ?? "–")}</td>
+            </tr>`;
+        }).join("");
+
+        $cuerpoTabla.innerHTML = html;
+        ultimosIds = idsNuevos;
+    }
+
+    /* ── Cuenta regresiva ─────────────────────────────────────── */
+    setInterval(() => {
+        segundosRestantes = Math.max(0, segundosRestantes - 1);
+        $cuentaAtras.textContent = segundosRestantes;
+        if (segundosRestantes === 0) {
+            cargarMarcaciones();
+        }
+    }, 1000);
+
+    /* ── Escape HTML básico para prevenir XSS ─────────────────── */
+    function escHtml(s) {
+        if (s === null || s === undefined) return "–";
+        return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    /* ── Carga inicial ────────────────────────────────────────── */
+    cargarMarcaciones();
+</script>
+
+</body>
+</html>
