@@ -73,4 +73,9 @@ public interface MarcacionRepository extends JpaRepository<Marcacion, Long> {
     List<String> findEmpCodesDistintosPorRango(
             @org.springframework.data.repository.query.Param("desde") LocalDateTime desde,
             @org.springframework.data.repository.query.Param("hasta") LocalDateTime hasta);
+
+    List<Marcacion> findAllByOrderByEmpCodeAscPunchTimeAsc();
+
+    List<Marcacion> findByPunchTimeBetweenOrderByEmpCodeAscPunchTimeAsc(
+            LocalDateTime desde, LocalDateTime hasta);
 }

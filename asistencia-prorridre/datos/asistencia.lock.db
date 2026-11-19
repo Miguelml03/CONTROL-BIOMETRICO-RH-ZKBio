@@ -1,6 +1,6 @@
 #FileLock
-#Mon Nov 09 09:55:18 PET 2026
-hostName=DESKTOP-24FT09E
-id=1a1c0ce75f8b270169a5765ed4cac41dd1fab654a0f
+#Thu Nov 19 09:41:45 BRT 2026
+server=169.254.207.7\:50549
+hostName=LAPTOP-8FOR690T
 method=file
-server=192.168.68.140\:53199
+id=1a1f3d3becbdb126e6812387045191d04698e0506ec

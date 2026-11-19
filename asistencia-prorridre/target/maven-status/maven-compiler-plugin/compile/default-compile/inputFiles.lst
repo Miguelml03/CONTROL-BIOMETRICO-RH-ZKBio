@@ -1,16 +1,66 @@
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\MarcacionRepository.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\config\AppConfig.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\entity\EstadoMarcacion.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\EstadoMarcacionRepository.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\web\MarcacionController.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\TransaccionDto.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\entity\Marcacion.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\MarcacionService.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\PaginaTransacciones.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\ZkBioClient.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\LoginRequest.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\LoginResponse.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\AsistenciaApplication.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\web\dto\MarcacionResponse.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\scheduler\LectorMarcaciones.java
-D:\DESCARGAS\proyec PRORRIDRE\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\ZkBioTokenManager.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\controller\DashboardController.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\ConfigFinancieraRequestDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\security\Rol.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\ZkBioTokenManager.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\config\AppConfig.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\JustificacionAuditoriaRepository.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\model\RegistroAsistencia.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\AttendanceEngineService.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\TransaccionDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\config\CorsConfig.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\web\dto\MarcacionResponse.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\entity\EstadoMarcacion.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\EmpleadoConfigFinancieraRepository.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\model\Empleado.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\ZKBioTimeSyncService.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\security\SecurityConfig.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\entity\Marcacion.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\RegistroAsistenciaDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\MarcacionService.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\AuthResponseDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\model\Departamento.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\security\SecurityDataInitializer.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\DepartamentoRepository.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\security\JwtAuthenticationFilter.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\DashboardKpiDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\ExcelExportService.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\security\JwtUtil.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\controller\MaestroController.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\AsistenciaApplication.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\CalcularVectorRequest.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\ResumenKpiDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\LoginResponse.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\controller\ExportController.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\scheduler\LectorMarcaciones.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\controller\UsuarioController.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\JustificarRequestDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\model\JustificacionAuditoria.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\web\MarcacionController.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\controller\EmpleadoController.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\LiquidacionPagoDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\controller\AttendanceController.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\UsuarioService.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\ExcelCsvImportService.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\controller\AuthController.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\EditarAsistenciaRequestDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\security\UsuarioRepository.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\ImportResultDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\ZkBioClient.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\security\Usuario.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\PaginaTransacciones.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\EmpleadoRepository.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\LoginRequestDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\SincronizacionMaestrosResultDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\controller\PayrollController.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\LoginRequest.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\RegistroAsistenciaRepository.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\model\EmpleadoConfigFinanciera.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\EstadoMarcacionRepository.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\PayrollService.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\DashboardKpiService.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\MarcacionRepository.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\ZkBioIntegrationService.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\UsuarioDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\DepartamentoDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\EmpleadoDto.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\security\CustomUserDetailsService.java

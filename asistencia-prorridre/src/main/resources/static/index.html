@@ -1,499 +1,1523 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRORRIDRE – Control de Asistencia</title>
-    <style>
-        /* ================================================================
-           ESTILOS GLOBALES – PRORRIDRE Control de Asistencia
-           Paleta sobria: azules institucionales + grises neutros
-        ================================================================ */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        :root {
-            --azul-oscuro:     #1a3a5c;
-            --azul-medio:      #2563a8;
-            --azul-claro:      #e8f0fb;
-            --gris-fondo:      #f4f6f9;
-            --gris-borde:      #dde3ec;
-            --gris-texto:      #4a5568;
-            --blanco:          #ffffff;
-            --verde-ok:        #2e7d32;
-            --verde-fondo:     #e8f5e9;
-            --naranja:         #e65100;
-            --naranja-fondo:   #fff3e0;
-            --celeste:         #0277bd;
-            --celeste-fondo:   #e1f5fe;
-            --morado:          #6a1b9a;
-            --morado-fondo:    #f3e5f5;
-            --gris-desc:       #546e7a;
-            --gris-desc-fondo: #eceff1;
-            --sombra:          0 2px 8px rgba(0,0,0,.10);
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--gris-fondo);
-            color: var(--gris-texto);
-            min-height: 100vh;
-        }
-
-        /* ── Cabecera ─────────────────────────────────────────────────── */
-        header {
-            background: var(--azul-oscuro);
-            color: var(--blanco);
-            padding: 18px 32px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: var(--sombra);
-        }
-
-        .logo-area { display: flex; align-items: center; gap: 14px; }
-
-        .logo-icon {
-            width: 44px; height: 44px;
-            background: var(--azul-medio);
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 22px;
-        }
-
-        header h1 { font-size: 1.25rem; font-weight: 600; line-height: 1.2; }
-        header h1 small { display: block; font-size: .8rem; font-weight: 400; opacity: .8; }
-
-        .estado-conexion {
-            display: flex; align-items: center; gap: 8px;
-            font-size: .85rem; opacity: .9;
-        }
-
-        .pulso {
-            width: 10px; height: 10px; border-radius: 50%;
-            background: #4caf50;
-            animation: pulsar 1.5s infinite;
-        }
-        .pulso.error { background: #e53935; animation: none; }
-
-        @keyframes pulsar {
-            0%,100% { opacity: 1; transform: scale(1); }
-            50%      { opacity: .5; transform: scale(.8); }
-        }
-
-        /* ── Contenedor principal ─────────────────────────────────────── */
-        main { max-width: 1200px; margin: 0 auto; padding: 28px 20px; }
-
-        /* ── Barra de estado rápido ───────────────────────────────────── */
-        .barra-estado {
-            background: var(--blanco);
-            border: 1px solid var(--gris-borde);
-            border-radius: 10px;
-            padding: 14px 22px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-            box-shadow: var(--sombra);
-        }
-
-        .barra-estado .info { font-size: .9rem; }
-        .barra-estado .info strong { color: var(--azul-oscuro); }
-
-        .actualizando {
-            font-size: .8rem;
-            color: var(--azul-medio);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .spinner {
-            width: 14px; height: 14px;
-            border: 2px solid var(--azul-claro);
-            border-top-color: var(--azul-medio);
-            border-radius: 50%;
-            animation: girar .7s linear infinite;
-            display: none;
-        }
-        .spinner.visible { display: block; }
-
-        @keyframes girar { to { transform: rotate(360deg); } }
-
-        /* ── Leyenda de estados ───────────────────────────────────────── */
-        .leyenda {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: .78rem;
-            font-weight: 600;
-        }
-
-        .badge::before {
-            content: '';
-            width: 8px; height: 8px;
-            border-radius: 50%;
-        }
-
-        /* Un badge por cada estado – mismos colores que las filas */
-        .badge.entrada          { background: var(--verde-fondo);   color: var(--verde-ok);  }
-        .badge.entrada::before  { background: var(--verde-ok);  }
-
-        .badge.salida-refrigerio         { background: var(--naranja-fondo);  color: var(--naranja); }
-        .badge.salida-refrigerio::before { background: var(--naranja); }
-
-        .badge.regreso-refrigerio         { background: var(--celeste-fondo);  color: var(--celeste); }
-        .badge.regreso-refrigerio::before { background: var(--celeste); }
-
-        .badge.salida-final         { background: var(--morado-fondo);  color: var(--morado); }
-        .badge.salida-final::before { background: var(--morado); }
-
-        .badge.desconocido         { background: var(--gris-desc-fondo); color: var(--gris-desc); }
-        .badge.desconocido::before { background: var(--gris-desc); }
-
-        /* ── Tabla de marcaciones ─────────────────────────────────────── */
-        .tarjeta {
-            background: var(--blanco);
-            border: 1px solid var(--gris-borde);
-            border-radius: 10px;
-            box-shadow: var(--sombra);
-            overflow: hidden;
-        }
-
-        .tarjeta-cabecera {
-            padding: 16px 22px;
-            background: var(--azul-oscuro);
-            color: var(--blanco);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .tarjeta-cabecera h2 { font-size: 1rem; font-weight: 600; }
-
-        .total-badge {
-            background: rgba(255,255,255,.2);
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: .8rem;
-        }
-
-        .tabla-wrapper { overflow-x: auto; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: .88rem;
-        }
-
-        thead { background: var(--azul-claro); }
-
-        th {
-            padding: 11px 14px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--azul-oscuro);
-            white-space: nowrap;
-            border-bottom: 2px solid var(--gris-borde);
-        }
-
-        tbody tr {
-            border-bottom: 1px solid var(--gris-borde);
-            transition: background .15s;
-        }
-        tbody tr:last-child { border-bottom: none; }
-        tbody tr:hover { background: #f7faff; }
-
-        /* Fila nueva resaltada brevemente */
-        tbody tr.nueva {
-            animation: resaltarNueva 2s ease-out;
-        }
-
-        @keyframes resaltarNueva {
-            0%   { background: #fff9c4; }
-            100% { background: transparent; }
-        }
-
-        td {
-            padding: 10px 14px;
-            vertical-align: middle;
-            color: var(--gris-texto);
-        }
-
-        .td-id    { font-family: monospace; font-size: .82rem; color: #888; }
-        .td-emp   { font-weight: 600; color: var(--azul-oscuro); }
-        .td-emp small { display: block; font-weight: 400; color: #718096; }
-        .td-hora  { font-family: monospace; font-size: .9rem; }
-
-        /* ── Chips de estado en celdas ────────────────────────────────── */
-        .chip {
-            display: inline-block;
-            padding: 4px 11px;
-            border-radius: 14px;
-            font-size: .78rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .chip.entrada          { background: var(--verde-fondo);    color: var(--verde-ok);  }
-        .chip.salida-refrigerio { background: var(--naranja-fondo); color: var(--naranja);   }
-        .chip.regreso-refrigerio { background: var(--celeste-fondo);color: var(--celeste);   }
-        .chip.salida-final     { background: var(--morado-fondo);   color: var(--morado);    }
-        .chip.desconocido      { background: var(--gris-desc-fondo);color: var(--gris-desc); }
-
-        /* ── Ícono de verificación ────────────────────────────────────── */
-        .verif {
-            display: inline-flex; align-items: center; gap: 5px;
-            font-size: .82rem; color: #666;
-        }
-
-        /* ── Estado vacío / error ─────────────────────────────────────── */
-        .estado-vacio {
-            padding: 48px 20px;
-            text-align: center;
-            color: #aaa;
-        }
-        .estado-vacio .icono { font-size: 2.5rem; margin-bottom: 10px; }
-        .estado-vacio p { font-size: .9rem; }
-
-        /* ── Pie de página ────────────────────────────────────────────── */
-        footer {
-            text-align: center;
-            padding: 20px;
-            font-size: .78rem;
-            color: #aaa;
-            margin-top: 10px;
-        }
-
-        /* ── Responsivo ───────────────────────────────────────────────── */
-        @media (max-width: 640px) {
-            header { flex-direction: column; align-items: flex-start; gap: 10px; }
-            header h1 { font-size: 1.1rem; }
-            th, td { padding: 8px 10px; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRORRIDRE — Control Biométrico y Planilla de Pagos</title>
+  <link rel="stylesheet" href="/css/prorridre.css">
+  <!-- Chart.js via CDN (sin necesidad de build ni npm) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════════════
-     CABECERA
+<!-- ══════════════════════════════════════════════════════════
+     SIDEBAR DE NAVEGACIÓN
 ══════════════════════════════════════════════════════════════ -->
-<header>
-    <div class="logo-area">
-        <div class="logo-icon">🏛️</div>
-        <h1>
-            Control de Asistencia
-            <small>PRORRIDRE PUNO — Fase 1</small>
-        </h1>
-    </div>
-    <div class="estado-conexion">
-        <div class="pulso" id="pulso"></div>
-        <span id="txt-conexion">Conectando…</span>
-    </div>
-</header>
+<aside class="sidebar" id="sidebar">
 
-<!-- ══════════════════════════════════════════════════════════════
+  <div class="sidebar-logo">
+    <div class="logo-badge">PRORRIDRE</div>
+    <h1>Control Biométrico</h1>
+    <p>ZKTeco / ZKBio Time 8.0.8</p>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Analítica y Auditoría</div>
+
+    <a class="nav-item active" data-view="dashboard" onclick="App.navegar('dashboard')">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+      </span>
+      Dashboard Ejecutivo
+    </a>
+
+    <a class="nav-item" data-view="asistencia" onclick="App.navegar('asistencia')">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </span>
+      Matriz de Asistencia
+    </a>
+
+    <a class="nav-item" data-view="empleados" onclick="App.navegar('empleados')">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </span>
+      Padrón de Empleados
+    </a>
+
+    <div class="nav-section-label" style="margin-top:.5rem">Financiero y Doctor</div>
+
+    <a class="nav-item" data-view="planillas" onclick="App.navegar('planillas')">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </span>
+      Planilla del Doctor
+    </a>
+
+    <a class="nav-item" data-view="glosario" onclick="App.navegar('glosario')">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </span>
+      Glosario y Reglas
+    </a>
+
+    <div class="nav-section-label" style="margin-top:.5rem">Sistema</div>
+
+    <a class="nav-item" data-view="usuarios" id="nav-item-usuarios" onclick="App.navegar('usuarios')">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+        </svg>
+      </span>
+      Usuarios del Sistema
+    </a>
+
+    <a class="nav-item" onclick="App.abrirModalExportar()">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </span>
+      Exportar Excel (.xlsx)
+    </a>
+
+    <a class="nav-item" onclick="App.sincronizar()">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </span>
+      Sincronizar BD
+    </a>
+
+    <a class="nav-item" onclick="App.sincronizarMaestros()">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </span>
+      Sincronizar Maestros (ZKBio)
+    </a>
+
+    <a class="nav-item" href="/h2-console" target="_blank">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        </svg>
+      </span>
+      Consola H2
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <strong>PRORRIDRE PUNO</strong>
+    Sistema Biométrico v4.0 — FASE 4
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════
      CONTENIDO PRINCIPAL
 ══════════════════════════════════════════════════════════════ -->
-<main>
+<div class="main-wrap">
 
-    <!-- ── Barra de estado rápido ──────────────────────────────── -->
-    <div class="barra-estado">
-        <div class="info">
-            Última actualización: <strong id="ultima-act">–</strong>
-            &nbsp;·&nbsp;
-            Próxima en: <strong id="cuenta-regresiva">10</strong> s
+  <!-- TOP BAR -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-title">
+      <h2 id="topbar-titulo">Dashboard Ejecutivo de Control Biométrico</h2>
+      <p id="topbar-subtitulo">Analítica en tiempo real · Asistencia PRORRIDRE PUNO</p>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-excel" onclick="App.abrirModalExportar()" title="Descarga el reporte auditado con 3 hojas y cero errores">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Exportar Excel (.xlsx)
+      </button>
+
+      <button class="btn-sync" id="btn-sync-maestros" style="background:#0284c7;border-color:#0284c7;" onclick="App.sincronizarMaestros()" title="Sincroniza la estructura jerárquica de Departamentos y Empleados desde ZKBio Time">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Maestros
+      </button>
+
+      <span class="badge-live" id="badge-live">En línea</span>
+      <button class="btn-sync" id="btn-sync-top" onclick="App.sincronizar()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Sincronizar
+      </button>
+
+      <!-- Perfil de Usuario y Logout -->
+      <div class="user-pill" id="user-pill" style="display:inline-flex;align-items:center;gap:.5rem;padding:.3rem .65rem;background:#f8fafc;border:1px solid #cbd5e1;border-radius:20px;font-size:.78rem;">
+        <span id="user-avatar" style="width:24px;height:24px;background:#0284c7;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem;">D</span>
+        <div style="line-height:1.2;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;gap:.3rem;">
+            <span id="user-name" style="font-weight:600;color:#0f172a;">Doctor</span>
+            <span id="user-badge" style="background:#e0f2fe;color:#0369a1;padding:.1rem .35rem;border-radius:4px;font-size:.65rem;font-weight:700;">ADMIN</span>
+          </div>
         </div>
-        <div class="actualizando">
-            <div class="spinner" id="spinner"></div>
-            <span id="txt-act">Esperando datos…</span>
-        </div>
+        <button onclick="Api.logout()" title="Cerrar Sesión" style="background:none;border:none;cursor:pointer;color:#64748b;padding:2px;display:flex;align-items:center;margin-left:.2rem;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- BARRA DE FILTROS GLOBALES (compartida entre vistas) -->
+  <div class="filter-bar" id="filter-bar">
+    <span class="filter-label">Período:</span>
+    <div class="filter-group">
+      <input type="date" id="f-desde" title="Fecha inicio">
+      <span style="color:var(--txt-muted);font-size:.8rem">→</span>
+      <input type="date" id="f-hasta" title="Fecha fin">
+    </div>
+    <span class="filter-label">Área:</span>
+    <select class="filter-select" id="f-departamento">
+      <option value="">Todos los departamentos</option>
+    </select>
+    <input type="search" class="filter-search" id="f-empid" placeholder="🔍 Código o ID…">
+    <button class="btn-filter-apply" onclick="App.aplicarFiltros()">Aplicar</button>
+    <button class="btn-filter-clear" onclick="App.limpiarFiltros()">Limpiar</button>
+    <span id="filter-info" style="font-size:.73rem;color:var(--txt-muted);margin-left:.5rem"></span>
+  </div>
+
+  <!-- BANNER DE ALERTA DE MAESTROS DESCONOCIDOS -->
+  <div id="banner-desconocidos" style="display:none;background:#fef2f2;border-left:4px solid #ef4444;padding:.6rem 1.25rem;margin:.5rem 1.5rem;border-radius:4px;color:#991b1b;font-size:.82rem;align-items:center;justify-content:space-between;">
+    <div>
+      <strong id="banner-desconocidos-titulo">⚠️ Empleados Desconocidos Detectados:</strong>
+      <span id="banner-desconocidos-desc">Existen marcaciones asociadas a personas sin nombres en el catálogo.</span>
+    </div>
+    <button class="btn-sync" style="background:#dc2626;color:#fff;border-color:#dc2626;padding:.3rem .8rem;font-size:.78rem;cursor:pointer;" onclick="App.sincronizarMaestros()">Sincronizar Catálogo ZKBio</button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+       VISTA 1: DASHBOARD EJECUTIVO
+  ════════════════════════════════════════════════════════════ -->
+  <main class="view-content active" id="vista-dashboard">
+    <!-- 6 KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card" id="kpi-registros" style="--kpi-color:var(--azul-vivo);--kpi-bg:var(--azul-claro)">
+        <div class="loading-state" style="padding:1rem"><div class="spinner-dark"></div></div>
+      </div>
+      <div class="kpi-card" id="kpi-puntualidad" style="--kpi-color:var(--verde);--kpi-bg:var(--verde-bg)">
+        <div class="loading-state" style="padding:1rem"><div class="spinner-dark"></div></div>
+      </div>
+      <div class="kpi-card" id="kpi-tardanza" style="--kpi-color:var(--ambar);--kpi-bg:var(--ambar-bg)">
+        <div class="loading-state" style="padding:1rem"><div class="spinner-dark"></div></div>
+      </div>
+      <div class="kpi-card" id="kpi-horas" style="--kpi-color:var(--celeste);--kpi-bg:var(--celeste-bg)">
+        <div class="loading-state" style="padding:1rem"><div class="spinner-dark"></div></div>
+      </div>
+      <div class="kpi-card" id="kpi-balance">
+        <div class="loading-state" style="padding:1rem"><div class="spinner-dark"></div></div>
+      </div>
+      <div class="kpi-card" id="kpi-omisiones" style="--kpi-color:var(--rojo);--kpi-bg:var(--rojo-bg)">
+        <div class="loading-state" style="padding:1rem"><div class="spinner-dark"></div></div>
+      </div>
     </div>
 
-    <!-- ── Leyenda de colores ──────────────────────────────────── -->
-    <div class="leyenda" id="leyenda">
-        <span class="badge entrada">Entrada</span>
-        <span class="badge salida-refrigerio">Salida a refrigerio</span>
-        <span class="badge regreso-refrigerio">Regreso de refrigerio</span>
-        <span class="badge salida-final">Salida final</span>
-        <span class="badge desconocido">Desconocido</span>
+    <!-- 4 Gráficos -->
+    <div class="charts-grid">
+      <!-- Gráfico 1: Dona — Distribución de Cumplimiento -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3>Distribución de Cumplimiento de Jornada</h3>
+            <p>Excedente · Reglamentaria · Déficit · Incompleto</p>
+          </div>
+        </div>
+        <div class="chart-wrap chart-wrap-sm"><canvas id="graficoDona"></canvas></div>
+      </div>
+
+      <!-- Gráfico 2: Barras Horizontales — Top Departamentos -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <h3>Ranking de Áreas por Incidencias</h3>
+            <p>Tardanzas · Incompletos · Faltas por Departamento/Meta</p>
+          </div>
+        </div>
+        <div class="chart-wrap chart-wrap-tall"><canvas id="graficoDeptos"></canvas></div>
+      </div>
+
+      <!-- Gráfico 3: Línea — Evolución de Ausentismo por Fecha -->
+      <div class="chart-card chart-wide">
+        <div class="chart-card-header">
+          <div>
+            <h3>Evolución de Ausentismo Real por Día Hábil</h3>
+            <p>Días-Hombre de falta detectados por cruce de padrón vs marcaciones</p>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="graficoLinea"></canvas></div>
+      </div>
+
+      <!-- Gráfico 4: Barras Agrupadas — Horas Extra vs Déficit por Área -->
+      <div class="chart-card chart-wide">
+        <div class="chart-card-header">
+          <div>
+            <h3>Comparativo de Eficiencia Horaria por Área</h3>
+            <p>Promedio de horas trabajadas vs. tardanza acumulada (en horas)</p>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="graficoBalance"></canvas></div>
+      </div>
+    </div>
+  </main><!-- /vista-dashboard -->
+
+  <!-- ════════════════════════════════════════════════════════
+       VISTA 2: MATRIZ DE AUDITORÍA BIOMÉTRICA (18 COLUMNAS A:R)
+  ════════════════════════════════════════════════════════════ -->
+  <main class="view-content" id="vista-asistencia">
+    <div class="table-toolbar">
+      <div class="tab-filters">
+        <button class="tab-btn active" data-tab="todos" onclick="Asistencia.cambiarTab('todos')">
+          Todos <span class="tab-count" id="tab-count-todos">…</span>
+        </button>
+        <button class="tab-btn" data-tab="tardanza" onclick="Asistencia.cambiarTab('tardanza')">
+          ⚠ Con Tardanza <span class="tab-count" id="tab-count-tardanza">…</span>
+        </button>
+        <button class="tab-btn" data-tab="incompleto" onclick="Asistencia.cambiarTab('incompleto')">
+          ✖ Incompletos / 1 Marcación <span class="tab-count" id="tab-count-incompleto">…</span>
+        </button>
+        <button class="tab-btn" data-tab="deficit" onclick="Asistencia.cambiarTab('deficit')">
+          ▼ Con Déficit Horario <span class="tab-count" id="tab-count-deficit">…</span>
+        </button>
+        <button class="tab-btn" data-tab="depurado" onclick="Asistencia.cambiarTab('depurado')">
+          ✦ 5+ Marcaciones <span class="tab-count" id="tab-count-depurado">…</span>
+        </button>
+      </div>
+      <div class="table-actions">
+        <button class="btn-excel" onclick="App.abrirModalExportar()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar Excel Auditado (.xlsx)
+        </button>
+      </div>
     </div>
 
-    <!-- ── Tabla de últimas 50 marcaciones ────────────────────── -->
-    <div class="tarjeta">
-        <div class="tarjeta-cabecera">
-            <h2>📋 Últimas 50 marcaciones</h2>
-            <span class="total-badge" id="badge-total">–</span>
-        </div>
-        <div class="tabla-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>ID Reloj</th>
-                        <th>Empleado</th>
-                        <th>Fecha / Hora</th>
-                        <th>Estado</th>
-                        <th>Verificación</th>
-                        <th>Terminal</th>
-                    </tr>
-                </thead>
-                <tbody id="cuerpo-tabla">
-                    <!-- Las filas se inyectan por JavaScript -->
-                </tbody>
-            </table>
-        </div>
-        <div class="estado-vacio" id="estado-vacio" style="display:none">
-            <div class="icono">🔍</div>
-            <p>No hay marcaciones disponibles todavía.<br>
-               El lector consultará el reloj en breve.</p>
-        </div>
+    <div class="table-container">
+      <div class="table-scroll">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th data-col="empId" onclick="Asistencia.ordenarPor('empId')">Col A · ID</th>
+              <th data-col="nombres" onclick="Asistencia.ordenarPor('nombres')">Col B-C · Empleado</th>
+              <th data-col="departamento" onclick="Asistencia.ordenarPor('departamento')">Col E · Área / Meta</th>
+              <th data-col="fecha" onclick="Asistencia.ordenarPor('fecha')">Col F · Fecha</th>
+              <th data-col="numMarcaciones" onclick="Asistencia.ordenarPor('numMarcaciones')" style="text-align:center">Col G · Marks</th>
+              <th>Col H · Horas Crudas</th>
+              <th data-col="horaEntrada" onclick="Asistencia.ordenarPor('horaEntrada')">Col I · Entrada</th>
+              <th>Col J · Ini.Alm.</th>
+              <th>Col K · Fin.Alm.</th>
+              <th data-col="horaSalida" onclick="Asistencia.ordenarPor('horaSalida')">Col L · Salida</th>
+              <th data-col="condicionIngreso" onclick="Asistencia.ordenarPor('condicionIngreso')">Col M · Condición</th>
+              <th data-col="minutosTardanza" onclick="Asistencia.ordenarPor('minutosTardanza')">Col N · Tardanza</th>
+              <th data-col="jornadaEfectiva" onclick="Asistencia.ordenarPor('jornadaEfectiva')">Col O · Jorn.Efec.</th>
+              <th>Col P · Norma</th>
+              <th data-col="balanceJornada" onclick="Asistencia.ordenarPor('balanceJornada')">Col Q · Balance</th>
+              <th data-col="estadoCumplimiento" onclick="Asistencia.ordenarPor('estadoCumplimiento')">Col R · Estado</th>
+              <th>Almuerzo</th>
+              <th>Justificación</th>
+              <th style="min-width:90px">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="asistencia-tbody">
+            <tr><td colspan="19">
+              <div class="loading-state">
+                <div class="spinner-dark"></div>
+                <p>Cargando registros biométricos…</p>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer" id="asistencia-footer"></div>
+    </div>
+  </main><!-- /vista-asistencia -->
+
+  <!-- ════════════════════════════════════════════════════════
+       VISTA 3: PANEL DEL DOCTOR — PLANILLAS, PAGOS Y DESCUENTOS
+  ════════════════════════════════════════════════════════════ -->
+  <main class="view-content" id="vista-planillas">
+
+    <!-- 4 Tarjetas Financieras Superiores -->
+    <div class="fin-kpi-grid">
+      <div class="fin-kpi-card" style="--card-color:var(--azul-vivo)">
+        <span class="fin-kpi-title">Presupuesto Bruto Mensual</span>
+        <span class="fin-kpi-val" id="fin-kpi-bruto">S/ 0.00</span>
+        <span class="fin-kpi-sub" id="fin-kpi-trabajadores">Cargando trabajadores…</span>
+      </div>
+      <div class="fin-kpi-card" style="--card-color:var(--ambar)">
+        <span class="fin-kpi-title">Total Descuentos Tardanzas</span>
+        <span class="fin-kpi-val" style="color:var(--ambar)" id="fin-kpi-tardanza">- S/ 0.00</span>
+        <span class="fin-kpi-sub">Fórmula: Minutos × (Sueldo/30/8/60)</span>
+      </div>
+      <div class="fin-kpi-card" style="--card-color:var(--rojo)">
+        <span class="fin-kpi-title">Total Dctos. Déficit y Faltas</span>
+        <span class="fin-kpi-val" style="color:var(--rojo)" id="fin-kpi-deficit-faltas">- S/ 0.00</span>
+        <span class="fin-kpi-sub">Déficit Horas + Días Falta + Omisiones</span>
+      </div>
+      <div class="fin-kpi-card" style="--card-color:var(--verde)">
+        <span class="fin-kpi-title">Total Neto a Pagar Planilla</span>
+        <span class="fin-kpi-val" style="color:var(--verde)" id="fin-kpi-neto">S/ 0.00</span>
+        <span class="fin-kpi-sub">Líquido a abonar a trabajadores</span>
+      </div>
     </div>
 
-</main>
+    <!-- Panel de Reglas de Descuento (Ajustable en vivo por el Doctor) -->
+    <div class="rules-card">
+      <div class="rules-card-header">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Panel de Reglas Financieras del Doctor (Ajuste en Tiempo Real)
+        </h3>
+        <span style="font-size:.73rem;color:var(--txt-muted)">Hora Base: <strong>08:00:00</strong> · Tolerancia: <strong>08:10:00</strong></span>
+      </div>
 
-<footer>
-    Sistema de Control de Asistencia · PRORRIDRE PUNO · Solo lectura · Ley 29733
-</footer>
+      <div class="rules-grid">
+        <div class="rule-item">
+          <div class="rule-info">
+            <span class="rule-name">Descontar Tardanzas</span>
+            <span class="rule-desc">Aplica deducción por minuto sobrepasando las 08:10</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rule-tardanza" checked onchange="PagosDoctor.cambiarRegla('descontarTardanza', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
 
-<!-- ══════════════════════════════════════════════════════════════
-     JAVASCRIPT – Actualización automática cada 10 s
+        <div class="rule-item">
+          <div class="rule-info">
+            <span class="rule-name">Descontar Déficit de Jornada</span>
+            <span class="rule-desc">Deduce horas no laboradas cuando jornada &lt; 8h</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rule-deficit" checked onchange="PagosDoctor.cambiarRegla('descontarDeficit', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="rule-item">
+          <div class="rule-info">
+            <span class="rule-name">Penalidad Omisión de Marcado</span>
+            <span class="rule-desc">Descuento de 0.5 día por salida/entrada omitida</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rule-omision" checked onchange="PagosDoctor.cambiarRegla('penalizarOmision', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="rule-item">
+          <div class="rule-info">
+            <span class="rule-name">Compensar Excedente vs Déficit</span>
+            <span class="rule-desc">Horas extra compensan déficit horario del mes</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="rule-compensa" checked onchange="PagosDoctor.cambiarRegla('excedenteCompensa', this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de Liquidación por Empleado -->
+    <div class="table-container">
+      <div class="table-toolbar" style="border-bottom:1px solid var(--borde-light);margin-bottom:0">
+        <h3 style="font-size:.9rem;color:var(--azul-oscuro)">Planilla de Liquidación Mensual por Trabajador</h3>
+        <button class="btn-excel" onclick="App.abrirModalExportar()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar Planilla a Excel
+        </button>
+      </div>
+      <div class="table-scroll">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Trabajador</th>
+              <th>Departamento / Meta</th>
+              <th>Sueldo Base (S/)</th>
+              <th style="text-align:center">Días Asist.</th>
+              <th style="text-align:center">Faltas</th>
+              <th style="text-align:right">Min. Tard.</th>
+              <th style="text-align:right">Hrs. Déficit</th>
+              <th style="text-align:right">Hrs. Exced.</th>
+              <th style="text-align:right">Dcto. Tard.</th>
+              <th style="text-align:right">Dcto. Déf/Fal.</th>
+              <th style="text-align:center">Justificaciones</th>
+              <th style="text-align:right">NETO A PAGAR</th>
+              <th style="text-align:center">Boleta</th>
+            </tr>
+          </thead>
+          <tbody id="planillas-tbody">
+            <tr><td colspan="14">
+              <div class="loading-state"><div class="spinner-dark"></div><p>Cargando datos de planilla…</p></div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main><!-- /vista-planillas -->
+
+  <!-- ════════════════════════════════════════════════════════
+       VISTA 4: GLOSARIO TÉCNICO Y REGLAS DE NEGOCIO
+  ════════════════════════════════════════════════════════════ -->
+  <main class="view-content" id="vista-glosario">
+
+    <div class="glosario-card">
+      <h3>Documentación y Fórmulas Auditadas PRORRIDRE PUNO</h3>
+      <p>
+        Esta especificación replica y completa la hoja <code>Glosario y Reglas Técnicas</code> del archivo Excel institucional,
+        incorporando las fórmulas que estaban ausentes o generaban errores <code>#¡VALOR!</code> y <code>#####</code>.
+      </p>
+
+      <div class="table-scroll">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th style="width:110px">Columna</th>
+              <th style="width:180px">Concepto / Campo</th>
+              <th>Fórmula Excel Corregida (Cero Errores)</th>
+              <th>Equivalente Motor Java</th>
+              <th>Regla de Negocio PRORRIDRE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-depto">Columna I</span></td>
+              <td><strong>Hora Entrada</strong></td>
+              <td>Primera marcación válida ocurrida entre <code>05:00:00</code> y <code>11:30:00</code></td>
+              <td><code>asignarPorVentanasHorarias()</code></td>
+              <td>Filtro antirrebote de 5 min (300s). Si tiene una sola timbrada vespertina (ej. 18:28), se asigna a Salida y nunca a Entrada, evitando falsas tardanzas de 600 min.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-depto">Columna J - K</span></td>
+              <td><strong>Almuerzo (Refrigerio)</strong></td>
+              <td>J: <code>12:00:00</code> - <code>13:35:00</code><br>K: <code>13:35:01</code> - <code>15:30:00</code></td>
+              <td><code>aplicarReglasRefrigerio()</code></td>
+              <td>Si omitió timbrar refrigerio pero laboró día completo, el motor inyecta 1 hora reglamentaria (13:00 a 14:00). Si se retiró antes de las 14:00 (media jornada), el descuento es 0.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-depto">Columna L</span></td>
+              <td><strong>Hora Salida</strong></td>
+              <td>Última marcación válida <code>&gt;= 15:30:01</code> (o 11:30-13:30 en media jornada)</td>
+              <td><code>asignarPorVentanasHorarias()</code></td>
+              <td>Registra el cese de labores. Omisiones de salida generan advertencia para revisión del Doctor y penalidad de 0.5 día si no se justifica.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-a-tiempo">Columna M</span></td>
+              <td><strong>Condición de Ingreso</strong></td>
+              <td><code class="formula-code">=SI(ESBLANCO(I2);"Sin Marcación";SI(I2&lt;=NSHORA(8;10;0);"A Tiempo";"Tardanza"))</code></td>
+              <td><code>determinarCondicionIngreso()</code></td>
+              <td>Entrada hasta las 08:10:00 puntual / dentro de tolerancia reglamentaria (A Tiempo, no afecta el pago). Marcaciones posteriores a las 08:10:00 clasifican como Tardanza. Si no hay entrada registrada devuelve Sin Marcación.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-tardanza">Columna N</span></td>
+              <td><strong>Minutos de Tardanza</strong></td>
+              <td><code class="formula-code">=SI(O(ESBLANCO(I2);I2="";I2&lt;=NSHORA(8;10;0));0;REDONDEAR((I2-NSHORA(8;10;0))*1440;0))</code></td>
+              <td><code>calcularMinutosTardanza()</code></td>
+              <td><strong>Tolerancia de 10 min protegida:</strong> hasta las 08:10:00 la tardanza es exactamente 0 minutos. Quien timbra posterior a las 08:10:00 (ej. Clinton a las 08:27:33) computa únicamente los minutos que exceden dicho límite (17 min). Elimina cualquier valor negativo en el Excel.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-depto">Columna O</span></td>
+              <td><strong>Jornada Efectiva</strong></td>
+              <td><code class="formula-code">=SI(O(I2="";L2="");"";(L2-I2)-(SI(O(J2="";K2="");TIEMPO(1;0;0);K2-J2)))</code></td>
+              <td><code>calcularJornadaEfectiva()</code></td>
+              <td>Tiempo neto trabajado restando refrigerio. Al devolver vacío <code>""</code> en omisiones, soluciona los 304 errores <code>#¡VALOR!</code> del Excel original.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-depto">Columna P</span></td>
+              <td><strong>Jornada Norma</strong></td>
+              <td><code class="formula-code">=TIEMPO(8;0;0)</code></td>
+              <td><code>JORNADA_NORMA_HORAS = 8.0</code></td>
+              <td>Jornada legal ordinaria institucional de 8 horas diarias de trabajo efectivo.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-reglamentaria">Columna Q</span></td>
+              <td><strong>Balance Jornada</strong></td>
+              <td><code class="formula-code">=SI(O2="";"";(O2-P2)*24)</code></td>
+              <td><code>calcularBalanceJornada()</code></td>
+              <td>Expresado en horas decimales. Horas positivas (+) son excedente compensable; horas negativas (-) representan déficit sujeto a deducción salarial.</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-depto">Columna R</span></td>
+              <td><strong>Estado Cumplimiento</strong></td>
+              <td><code class="formula-code">=SI(O(I2="";L2="");"Incompleto (Falta Salida/Entrada)";SI(Q2&gt;0,05;"Excedente de Jornada";SI(Q2&lt;-0,05;"Déficit de Jornada";"Jornada Reglamentaria")))</code></td>
+              <td><code>evaluarEstadoCumplimiento()</code></td>
+              <td>Margen de tolerancia de +/- 3 minutos (+/- 0.05 hrs). Clasifica automáticamente los 1,576 registros institucionales.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main><!-- /vista-glosario -->
+
+  <!-- ════════════════════════════════════════════════════════
+       VISTA 5: PADRÓN DE TRABAJADORES (GESTIÓN DE EMPLEADOS)
+  ════════════════════════════════════════════════════════════ -->
+  <main class="view-content" id="vista-empleados">
+    <div class="table-container">
+      <div class="table-toolbar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;border-bottom:1px solid var(--borde-light);padding-bottom:1rem;margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+          <input type="text" id="padron-search" placeholder="🔍 Buscar por nombre, código o cargo…" oninput="Empleados.filtrar()" style="padding:.45rem .8rem;border:1px solid var(--borde);border-radius:6px;font-size:.82rem;width:260px;">
+          <select id="padron-filtro-depto" onchange="Empleados.filtrar()" style="padding:.45rem .8rem;border:1px solid var(--borde);border-radius:6px;font-size:.82rem;">
+            <option value="">Todos los Departamentos</option>
+          </select>
+          <select id="padron-filtro-estado" onchange="Empleados.filtrar()" style="padding:.45rem .8rem;border:1px solid var(--borde);border-radius:6px;font-size:.82rem;">
+            <option value="">Todos los Estados</option>
+            <option value="true">Activos</option>
+            <option value="false">Inactivos</option>
+          </select>
+          <span id="total-empleados-padron" style="font-size:.8rem;color:var(--txt-muted);font-weight:600;"></span>
+        </div>
+        <div>
+          <button id="btn-nuevo-empleado" class="btn-sync" style="background:#0284c7;border-color:#0284c7;color:#fff;" onclick="Empleados.abrirModalNuevo()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            + Nuevo Empleado
+          </button>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th style="width:90px;">ID Biométrico</th>
+              <th>Trabajador (Nombres y Apellidos)</th>
+              <th>Cargo</th>
+              <th>Departamento / Meta</th>
+              <th style="text-align:right;">Sueldo Base (S/)</th>
+              <th style="text-align:center;">Estado</th>
+              <th style="text-align:center;width:140px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-empleados">
+            <tr>
+              <td colspan="7">
+                <div class="loading-state"><div class="spinner-dark"></div><p>Cargando nómina de empleados…</p></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main><!-- /vista-empleados -->
+
+  <!-- ════════════════════════════════════════════════════════
+       VISTA 6: USUARIOS DEL SISTEMA (ADMINISTRACIÓN DE ACCESO)
+  ════════════════════════════════════════════════════════════ -->
+  <main class="view-content" id="vista-usuarios">
+    <div class="table-container">
+      <div class="table-toolbar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;border-bottom:1px solid var(--borde-light);padding-bottom:1rem;margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;gap:.75rem;">
+          <h3 style="font-size:.95rem;color:var(--azul-oscuro);margin:0;">Control de Acceso y Cuentas de Usuario</h3>
+          <span id="total-usuarios-badge" style="font-size:.78rem;color:var(--txt-muted);font-weight:600;"></span>
+        </div>
+        <div>
+          <button class="btn-sync" style="background:#0284c7;border-color:#0284c7;color:#fff;" onclick="Usuarios.abrirModalNuevo()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            + Asignar Nuevo Usuario
+          </button>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th style="width:70px;">ID</th>
+              <th>Nombre de Usuario (Login)</th>
+              <th>Nombre Completo</th>
+              <th>Rol Asignado</th>
+              <th style="text-align:center;">Estado</th>
+              <th style="text-align:center;width:160px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-usuarios">
+            <tr>
+              <td colspan="6">
+                <div class="loading-state"><div class="spinner-dark"></div><p>Cargando usuarios del sistema…</p></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main><!-- /vista-usuarios -->
+
+</div><!-- /main-wrap -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL ACCIÓN DEL DOCTOR (JUSTIFICACIÓN)
 ══════════════════════════════════════════════════════════════ -->
-<script>
-    "use strict";
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)Asistencia.cerrarModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <h3>⚕ Acción del Doctor — Justificación de Asistencia</h3>
+        <p id="modal-header-sub">Empleado: <span id="modal-nombre">—</span> · <span id="modal-fecha">—</span></p>
+      </div>
+      <button class="modal-close" onclick="Asistencia.cerrarModal()">✕</button>
+    </div>
 
-    /* ── Configuración ────────────────────────────────────────── */
-    const INTERVALO_SEG  = 10;          // refrescar cada 10 s
-    const API_URL        = "/api/marcaciones/ultimas";
-    const FMT_HORA       = new Intl.DateTimeFormat("es-PE", {
-        hour: "2-digit", minute: "2-digit", second: "2-digit"
+    <div class="modal-body">
+      <div class="modal-row">
+        <div>Código: <span id="modal-empid">—</span></div>
+        <div>Área: <span id="modal-depto">—</span></div>
+      </div>
+      <div class="modal-row">
+        <div>Marcaciones: <span id="modal-marcaciones">—</span></div>
+        <div>Jornada efectiva: <span id="modal-jornada">—</span></div>
+      </div>
+      <div class="modal-row">
+        <div>Condición ingreso: <span id="modal-condicion"></span></div>
+        <div>Tardanza: <span id="modal-tardanza">0 min</span></div>
+      </div>
+      <div class="modal-row">
+        <div>Balance: <span id="modal-balance"></span></div>
+        <div>Estado: <span id="modal-estado"></span></div>
+      </div>
+      <div style="font-size:.75rem;color:var(--txt-muted);margin-bottom:.4rem">Horas crudas: <span id="modal-horas-crudas" style="font-family:monospace"></span></div>
+
+      <div id="modal-just-actual"></div>
+
+      <div class="modal-section-title">Acción a Aplicar</div>
+
+      <div class="form-group">
+        <label>Tipo de Justificación</label>
+        <select id="modal-tipo-just">
+          <option value="">— Seleccione una acción —</option>
+          <optgroup label="Exoneración / Justificación">
+            <option value="JUSTIFICADO_MEDICO">🏥 Descanso Médico (Essalud / Certificado)</option>
+            <option value="COMISION_SERVICIO">🚗 Comisión de Servicio / Viaje Oficial</option>
+            <option value="PAPELETA_PERMISO">📝 Papeleta de Permiso Autorizado</option>
+            <option value="REGULARIZADO_POR_DIRECTOR">✅ Regularizado / Autorizado por el Director</option>
+          </optgroup>
+          <optgroup label="Descuento">
+            <option value="APLICAR_DESCUENTO">💸 Aplicar Descuento (restablecer valores biométricos)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Observación / Documento de Sustento</label>
+        <textarea id="modal-observacion" placeholder="Ej.: Certificado Essalud N° 45892 — 12/11/2026"></textarea>
+      </div>
+
+      <input type="hidden" id="modal-registro-id" value="">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="Asistencia.cerrarModal()">Cancelar</button>
+      <button class="btn-modal-save" id="btn-modal-save" onclick="Asistencia.guardarJustificacion()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Aplicar Justificación
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL DE BOLETA DE LIQUIDACIÓN Y DETALLE (DOBLE VISTA / IMPRESIÓN)
+══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-boleta" onclick="if(event.target===this)PagosDoctor.cerrarBoleta()">
+  <div class="modal-box" style="max-width:850px">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <h3>📄 Boleta de Liquidación de Asistencia y Descuentos</h3>
+        <p>PRORRIDRE PUNO · Auditoría Biométrica Oficial</p>
+      </div>
+      <button class="modal-close" onclick="PagosDoctor.cerrarBoleta()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="boleta-paper">
+        <!-- Encabezado de la Boleta -->
+        <div class="boleta-header">
+          <div class="boleta-brand">
+            <h2>PRORRIDRE PUNO</h2>
+            <p>PROYECTO ESPECIAL REGIONAL RIEGO Y DRENAJE</p>
+            <p style="font-size:.68rem">RUC: 20448126781 · Gobierno Regional de Puno</p>
+          </div>
+          <div class="boleta-title-box">
+            <h3>Boleta de Control Horario</h3>
+            <p style="font-size:.75rem;color:var(--txt-muted)">Liquidación Mensual de Haberes</p>
+          </div>
+        </div>
+
+        <!-- Datos del Trabajador -->
+        <div class="boleta-info-grid">
+          <div class="boleta-info-item">
+            <strong>Trabajador:</strong>
+            <span id="b-nombre">—</span>
+          </div>
+          <div class="boleta-info-item">
+            <strong>Código Empleado:</strong>
+            <span id="b-empid" style="font-family:monospace">—</span>
+          </div>
+          <div class="boleta-info-item">
+            <strong>Área / Meta:</strong>
+            <span id="b-depto">—</span>
+          </div>
+          <div class="boleta-info-item">
+            <strong>Cargo:</strong>
+            <span id="b-cargo">—</span>
+          </div>
+          <div class="boleta-info-item">
+            <strong>Período:</strong>
+            <span id="b-periodo">—</span>
+          </div>
+          <div class="boleta-info-item">
+            <strong>Días Asistidos:</strong>
+            <span id="b-dias-asist">—</span>
+          </div>
+        </div>
+
+        <!-- Tabla Matemática de Cálculo -->
+        <table class="boleta-math-table">
+          <thead>
+            <tr>
+              <th>Concepto</th>
+              <th>Base de Cálculo</th>
+              <th>Valor Unitario</th>
+              <th>Incidencia / Tiempo</th>
+              <th style="text-align:right">Monto (S/)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Haber Básico Mensual</strong></td>
+              <td>Sueldo contractual</td>
+              <td id="b-sueldo">—</td>
+              <td>Mes de 30 días</td>
+              <td style="text-align:right;font-weight:700" id="b-sueldo-col">—</td>
+            </tr>
+            <tr>
+              <td>Dcto. Tardanzas</td>
+              <td>Valor Minuto: <span id="b-val-min">—</span></td>
+              <td>Minutos Acumulados</td>
+              <td id="b-tard-txt">—</td>
+              <td style="text-align:right;color:var(--rojo)">Deducción</td>
+            </tr>
+            <tr>
+              <td>Dcto. Déficit de Jornada</td>
+              <td>Valor Hora: <span id="b-val-hora">—</span></td>
+              <td>Horas No Laboradas</td>
+              <td id="b-def-txt">—</td>
+              <td style="text-align:right;color:var(--rojo)">Deducción</td>
+            </tr>
+            <tr>
+              <td>Dcto. Faltas / Inasistencias</td>
+              <td>Valor Día: <span id="b-val-dia">—</span></td>
+              <td>Días sin Marcación</td>
+              <td id="b-faltas-txt">—</td>
+              <td style="text-align:right;color:var(--rojo)">Deducción</td>
+            </tr>
+            <tr>
+              <td>Compensación Horas Extra</td>
+              <td>Valor Hora ordinaria</td>
+              <td>Excedente de Jornada</td>
+              <td id="b-exced-txt">—</td>
+              <td style="text-align:right;color:var(--verde)">A favor</td>
+            </tr>
+            <tr style="background:#f8fafc">
+              <td colspan="4"><strong>TOTAL DESCUENTOS Y DEDUCCIONES</strong></td>
+              <td style="text-align:right;font-weight:700;color:var(--rojo)" id="b-total-dcto">—</td>
+            </tr>
+            <tr style="background:#eaf8ef">
+              <td colspan="4" style="font-size:.9rem"><strong>NETO LÍQUIDO A PERCIBIR (S/)</strong></td>
+              <td style="text-align:right;font-size:1.1rem;font-weight:800;color:var(--verde)" id="b-neto">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Historial Día por Día -->
+        <h4 style="font-size:.82rem;color:var(--azul-oscuro);margin:1rem 0 .4rem">Detalle Diario de Marcaciones del Mes</h4>
+        <div style="max-height:180px;overflow-y:auto;border:1px solid var(--borde);border-radius:4px">
+          <table class="audit-table" style="font-size:.72rem">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Entrada</th>
+                <th>Ini.Alm</th>
+                <th>Fin.Alm</th>
+                <th>Salida</th>
+                <th>Condición</th>
+                <th style="text-align:center">Tardanza</th>
+                <th style="text-align:center">Balance</th>
+                <th>Justificación</th>
+              </tr>
+            </thead>
+            <tbody id="boleta-dias-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Firmas -->
+        <div class="boleta-signatures">
+          <div>
+            <div class="boleta-sig-line">
+              <strong>FIRMA DEL TRABAJADOR</strong><br>
+              DNI: .......................................
+            </div>
+          </div>
+          <div>
+            <div class="boleta-sig-line">
+              <strong>DIRECCIÓN / RECURSOS HUMANOS</strong><br>
+              PRORRIDRE PUNO
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /boleta-paper -->
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="PagosDoctor.cerrarBoleta()">Cerrar</button>
+      <button class="btn-modal-save" onclick="PagosDoctor.imprimirBoleta()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir Boleta
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL GESTIÓN DE EMPLEADO (CREAR / EDITAR)
+══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-empleado" style="display:none;" onclick="if(event.target===this)Empleados.cerrarModal()">
+  <div class="modal-box" style="max-width:540px">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <h3 id="emp-modal-titulo">Gestión de Empleado</h3>
+        <p>Padrón Oficial PRORRIDRE PUNO</p>
+      </div>
+      <button class="modal-close" onclick="Empleados.cerrarModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Código / ID Biométrico *</label>
+        <input type="text" id="emp-modal-empid" placeholder="Ej: 1002" style="font-family:monospace;font-weight:700;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div class="form-group">
+          <label>Nombres</label>
+          <input type="text" id="emp-modal-nombres" placeholder="Ej: JUAN CARLOS">
+        </div>
+        <div class="form-group">
+          <label>Apellidos</label>
+          <input type="text" id="emp-modal-apellidos" placeholder="Ej: MAMANI QUISPE">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div class="form-group">
+          <label>Cargo / Puesto</label>
+          <input type="text" id="emp-modal-cargo" placeholder="Ej: ESPECIALISTA EN RIEGO">
+        </div>
+        <div class="form-group">
+          <label>Sueldo Base Mensual (S/)</label>
+          <input type="number" step="0.01" id="emp-modal-sueldo" value="3000.00" style="font-family:monospace;font-weight:700;">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Departamento / Meta Presupuestal</label>
+        <select id="emp-modal-depto">
+          <option value="">Seleccione Departamento / Meta…</option>
+        </select>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:.6rem;margin-top:.5rem;">
+        <input type="checkbox" id="emp-modal-activo" checked style="width:16px;height:16px;cursor:pointer;">
+        <label for="emp-modal-activo" style="cursor:pointer;margin:0;font-weight:600;">Empleado Activo (Incluido en cálculos de asistencia y nómina)</label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="Empleados.cerrarModal()">Cancelar</button>
+      <button class="btn-modal-save" onclick="Empleados.guardar()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Guardar Empleado
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL GESTIÓN DE USUARIO (CREAR / EDITAR)
+══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-usuario" style="display:none;" onclick="if(event.target===this)Usuarios.cerrarModal()">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <h3 id="user-modal-titulo">Asignar Nuevo Usuario</h3>
+        <p>Control de Acceso y Roles Institucionales PRORRIDRE</p>
+      </div>
+      <button class="modal-close" onclick="Usuarios.cerrarModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nombre de Usuario (Login) *</label>
+        <input type="text" id="user-modal-username" placeholder="Ej: rrhh_operador" style="font-family:monospace;font-weight:700;">
+      </div>
+      <div class="form-group">
+        <label>Nombre Completo del Responsable</label>
+        <input type="text" id="user-modal-nombre" placeholder="Ej: Lic. Carlos Perez Ramos">
+      </div>
+      <div class="form-group">
+        <label id="user-modal-pass-label">Contraseña *</label>
+        <input type="password" id="user-modal-pass" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label>Rol Institucional *</label>
+        <select id="user-modal-rol">
+          <option value="ROLE_RRHH">ROLE_RRHH — Recursos Humanos (Solo Lectura, Filtros, Reportes)</option>
+          <option value="ROLE_ADMIN">ROLE_ADMIN — Director / Administrador (Acceso Total, Edición, Nómina)</option>
+        </select>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:.6rem;margin-top:.5rem;">
+        <input type="checkbox" id="user-modal-activo" checked style="width:16px;height:16px;cursor:pointer;">
+        <label for="user-modal-activo" style="cursor:pointer;margin:0;font-weight:600;">Usuario Habilitado para Iniciar Sesión</label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="Usuarios.cerrarModal()">Cancelar</button>
+      <button class="btn-modal-save" onclick="Usuarios.guardar()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Guardar Usuario
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL EDITAR ASISTENCIA (ADMINISTRADOR)
+══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-editar-asistencia" style="display:none;" onclick="if(event.target===this)Asistencia.cerrarModalEditar()">
+  <div class="modal-box" style="max-width:580px">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <h3 id="edit-asist-titulo">Editar Marcación de Asistencia</h3>
+        <p>Ajuste manual de horas y recálculo automático de tardanzas / balance</p>
+      </div>
+      <button class="modal-close" onclick="Asistencia.cerrarModalEditar()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <input type="hidden" id="edit-asist-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div class="form-group">
+          <label>ID Empleado</label>
+          <input type="text" id="edit-asist-empid" readonly style="background:#f1f5f9;font-weight:700;">
+        </div>
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="text" id="edit-asist-fecha" readonly style="background:#f1f5f9;font-weight:700;">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div class="form-group">
+          <label>Hora Entrada (HH:mm:ss)</label>
+          <input type="text" id="edit-asist-entrada" placeholder="08:00:00" style="font-family:monospace;font-weight:700;">
+        </div>
+        <div class="form-group">
+          <label>Hora Salida (HH:mm:ss)</label>
+          <input type="text" id="edit-asist-salida" placeholder="17:00:00" style="font-family:monospace;font-weight:700;">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div class="form-group">
+          <label>Inicio Almuerzo</label>
+          <input type="text" id="edit-asist-inialm" placeholder="13:00:00" style="font-family:monospace;">
+        </div>
+        <div class="form-group">
+          <label>Fin Almuerzo</label>
+          <input type="text" id="edit-asist-finalm" placeholder="14:00:00" style="font-family:monospace;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Marcaciones Crudas del Biométrico (separadas por coma)</label>
+        <input type="text" id="edit-asist-crudas" placeholder="07:55:00,13:02:15,14:01:10,17:05:22" style="font-family:monospace;font-size:.8rem;">
+      </div>
+
+      <div class="form-group">
+        <label>Observación del Administrador / Motivo de Corrección</label>
+        <textarea id="edit-asist-obs" placeholder="Ej.: Corrección por error de timbrado en biométrico autorizado por Director."></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="Asistencia.cerrarModalEditar()">Cancelar</button>
+      <button class="btn-modal-save" onclick="Asistencia.guardarEdicion()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Guardar y Recalcular
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL EXPORTAR EXCEL OFICIAL (POR MES O POR DÍAS)
+══════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-exportar-excel" style="display:none;" onclick="if(event.target===this)App.cerrarModalExportar()">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <h3>📊 Exportar Reporte de Asistencia en Excel (.xlsx)</h3>
+        <p>Formato Institucional PRORRIDRE PUNO — Ordenado por ID y Fecha</p>
+      </div>
+      <button class="modal-close" onclick="App.cerrarModalExportar()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Selector de Modo -->
+      <div style="display:flex;gap:.75rem;margin-bottom:1.25rem;">
+        <label style="flex:1;display:flex;align-items:center;gap:.5rem;padding:.75rem;border:2px solid var(--verde);border-radius:8px;background:#f0fdf4;cursor:pointer;font-weight:600;font-size:.85rem;" id="label-export-mes">
+          <input type="radio" name="export-modo" value="mes" checked onchange="App.cambiarModoExportar('mes')">
+          <span>📅 Por Mes Completo</span>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:.5rem;padding:.75rem;border:2px solid var(--borde);border-radius:8px;background:#fff;cursor:pointer;font-weight:600;font-size:.85rem;" id="label-export-dias">
+          <input type="radio" name="export-modo" value="dias" onchange="App.cambiarModoExportar('dias')">
+          <span>📆 Por Rango de Días</span>
+        </label>
+      </div>
+
+      <!-- Sección Modo Mes -->
+      <div id="seccion-export-mes" class="form-group">
+        <label>Seleccione el Mes a Liquidar</label>
+        <select id="export-mes-select" style="font-size:.9rem;padding:.55rem .8rem;font-weight:600;">
+          <option value="2026-10" selected>Octubre 2026 (2026-10)</option>
+          <option value="2026-09">Septiembre 2026 (2026-09)</option>
+          <option value="2026-11">Noviembre 2026 (2026-11)</option>
+          <option value="2026-12">Diciembre 2026 (2026-12)</option>
+        </select>
+        <span style="font-size:.74rem;color:var(--txt-muted);display:block;margin-top:.3rem;">
+          Exportará automáticamente desde el 1° hasta el último día del mes calendario seleccionado.
+        </span>
+      </div>
+
+      <!-- Sección Modo Días -->
+      <div id="seccion-export-dias" style="display:none;margin-bottom:1rem;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+          <div class="form-group">
+            <label>Fecha Inicial (Desde)</label>
+            <input type="date" id="export-dia-desde" value="2026-09-22">
+          </div>
+          <div class="form-group">
+            <label>Fecha Final (Hasta)</label>
+            <input type="date" id="export-dia-hasta" value="2026-10-19">
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros opcionales -->
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:.75rem;margin-top:.5rem;">
+        <div class="form-group">
+          <label>Departamento / Meta (Opcional)</label>
+          <select id="export-filtro-depto">
+            <option value="">Todos los departamentos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>ID Empleado (Opcional)</label>
+          <input type="text" id="export-filtro-empid" placeholder="Todos (o ej. 272)">
+        </div>
+      </div>
+
+      <!-- Resumen de especificación auditada -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:.85rem;margin-top:1rem;font-size:.76rem;color:#334155;line-height:1.5;">
+        <div style="font-weight:700;color:var(--azul-oscuro);margin-bottom:.3rem;display:flex;align-items:center;gap:.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Especificación de Salida Institucional:
+        </div>
+        • <strong>Fila 1:</strong> Título combinado <em>"Resumen de Asistencia"</em> idéntico a la plantilla institucional.<br>
+        • <strong>Fila 2:</strong> Cabeceras <code>Id</code>, <code>Nombres</code>, <code>Apellidos</code>, <code>nombre de empresa</code>, <code>Departamento</code>, <code>Fecha</code> (dd-MM-yyyy), <code>Núm</code>, <code>Hora</code>...<br>
+        • <strong>Orden Ascendente:</strong> Ordenado estrictamente por <strong>ID Numérico</strong> (1, 4, 5, 7, 93, 272...) y luego por <strong>Fecha</strong>.<br>
+        • <strong>Pestaña Activa:</strong> Nombrada dinámicamente con la fecha final del periodo (ej. <code>20261019</code>).<br>
+        • <strong>Fórmulas Corregidas:</strong> Columna N con <code>TIME(8,10,0)</code> y Columna O sin errores <code>#¡VALOR!</code>.
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="App.cerrarModalExportar()">Cancelar</button>
+      <button class="btn-modal-save" style="background:var(--verde);border-color:var(--verde);" onclick="App.ejecutarExportarExcel()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar Excel (.xlsx)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════════════════════════ -->
+<script src="/js/toast.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/dashboard.js"></script>
+<script src="/js/asistencia.js"></script>
+<script src="/js/pagos-doctor.js"></script>
+<script src="/js/empleados.js"></script>
+<script src="/js/usuarios.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// App — Controlador principal de la SPA PRORRIDRE
+// ═══════════════════════════════════════════════════════════
+const App = (() => {
+  const titulos = {
+    dashboard:  { h: 'Dashboard Ejecutivo de Control Biométrico', p: 'Analítica en tiempo real · Asistencia PRORRIDRE PUNO' },
+    asistencia: { h: 'Matriz de Auditoría Biométrica — 18 Columnas A:R', p: 'Registros individuales auditados con motor matemático corregido' },
+    planillas:  { h: 'Panel del Doctor — Planilla de Pagos y Descuentos', p: 'Control financiero, deducciones por tardanzas/faltas y boletas de liquidación' },
+    glosario:   { h: 'Glosario Técnico y Reglas de Negocio', p: 'Fórmulas Excel corregidas y especificación del motor matemático' },
+    empleados:  { h: 'Padrón Oficial de Empleados', p: 'Gestión de personal, asignación de metas presupuestales y control de acceso' },
+    usuarios:   { h: 'Gestión de Usuarios y Control de Acceso', p: 'Asignación de credenciales, roles institucionales y permisos' }
+  };
+
+  let vistaActual = 'dashboard';
+
+  function navegar(vista) {
+    vistaActual = vista;
+
+    // Actualizar sidebar
+    document.querySelectorAll('.nav-item[data-view]').forEach(el => {
+      el.classList.toggle('active', el.dataset.view === vista);
     });
 
-    /* ── Estado interno ───────────────────────────────────────── */
-    let segundosRestantes = INTERVALO_SEG;
-    let ultimosIds        = new Set();   // para detectar filas nuevas
+    // Ocultar/mostrar vistas
+    document.querySelectorAll('.view-content').forEach(el => {
+      el.classList.toggle('active', el.id === `vista-${vista}`);
+    });
 
-    /* ── Elementos del DOM ────────────────────────────────────── */
-    const $cuerpoTabla   = document.getElementById("cuerpo-tabla");
-    const $estadoVacio   = document.getElementById("estado-vacio");
-    const $badgeTotal    = document.getElementById("badge-total");
-    const $spinner       = document.getElementById("spinner");
-    const $ultimaAct     = document.getElementById("ultima-act");
-    const $cuentaAtras   = document.getElementById("cuenta-regresiva");
-    const $txtAct        = document.getElementById("txt-act");
-    const $pulso         = document.getElementById("pulso");
-    const $txtConexion   = document.getElementById("txt-conexion");
-
-    /* ── Función principal de carga ───────────────────────────── */
-    async function cargarMarcaciones() {
-        $spinner.classList.add("visible");
-        $txtAct.textContent = "Actualizando…";
-
-        try {
-            const resp = await fetch(API_URL, { cache: "no-store" });
-            if (!resp.ok) throw new Error("HTTP " + resp.status);
-
-            const datos = await resp.json();
-            renderizarTabla(datos);
-
-            // Indicadores de estado: OK
-            $pulso.classList.remove("error");
-            $txtConexion.textContent = "En línea";
-            $ultimaAct.textContent   = FMT_HORA.format(new Date());
-            $txtAct.textContent      = datos.length + " marcaciones cargadas";
-
-        } catch (err) {
-            // Indicadores de estado: ERROR
-            $pulso.classList.add("error");
-            $txtConexion.textContent = "Sin conexión";
-            $txtAct.textContent      = "Error al cargar: " + err.message;
-            console.error("[PRORRIDRE] Error cargando marcaciones:", err);
-        } finally {
-            $spinner.classList.remove("visible");
-            segundosRestantes = INTERVALO_SEG;
-        }
+    // Actualizar topbar
+    const t = titulos[vista];
+    if (t) {
+      document.getElementById('topbar-titulo').textContent   = t.h;
+      document.getElementById('topbar-subtitulo').textContent = t.p;
     }
 
-    /* ── Renderizado de la tabla ──────────────────────────────── */
-    function renderizarTabla(marcaciones) {
-        if (!marcaciones || marcaciones.length === 0) {
-            $cuerpoTabla.innerHTML = "";
-            $estadoVacio.style.display  = "block";
-            $badgeTotal.textContent     = "0 registros";
-            return;
-        }
+    // Cargar datos correspondientes
+    const params = _getParams();
+    if (vista === 'asistencia') {
+      Asistencia.cargar(params);
+    } else if (vista === 'planillas') {
+      PagosDoctor.cargar(params);
+    } else if (vista === 'empleados') {
+      Empleados.cargar(params);
+    } else if (vista === 'usuarios') {
+      Usuarios.cargar();
+    }
+  }
 
-        $estadoVacio.style.display = "none";
-        $badgeTotal.textContent    = marcaciones.length + " registros";
+  function aplicarFiltros() {
+    const params = _getParams();
+    _actualizarInfoFiltro(params);
+    if (vistaActual === 'dashboard') {
+      Dashboard.cargar(params);
+    } else if (vistaActual === 'asistencia') {
+      Asistencia.cargar(params);
+    } else if (vistaActual === 'planillas') {
+      PagosDoctor.cargar(params);
+    } else if (vistaActual === 'empleados') {
+      Empleados.cargar(params);
+    } else if (vistaActual === 'usuarios') {
+      Usuarios.cargar();
+    }
+  }
 
-        const idsNuevos = new Set(marcaciones.map(m => m.id));
+  function limpiarFiltros() {
+    document.getElementById('f-desde').value        = '';
+    document.getElementById('f-hasta').value        = '';
+    document.getElementById('f-departamento').value  = '';
+    document.getElementById('f-empid').value         = '';
+    document.getElementById('filter-info').textContent = '';
+    aplicarFiltros();
+  }
 
-        const html = marcaciones.map((m, i) => {
-            const esNueva  = !ultimosIds.has(m.id);
-            const claseNueva = esNueva ? " nueva" : "";
+  function _getParams() {
+    const p = {};
+    const desde = document.getElementById('f-desde').value;
+    const hasta = document.getElementById('f-hasta').value;
+    const depto = document.getElementById('f-departamento').value;
+    const empId = document.getElementById('f-empid').value.trim();
+    if (desde) p.fechaInicio = desde;
+    if (hasta) p.fechaFin    = hasta;
+    if (depto) p.departamento = depto;
+    if (empId) {
+      if (/^\d+$/.test(empId)) p.empId = empId;
+    }
+    return p;
+  }
 
-            // Icono de verificación
-            const iconoVerif = m.tipoVerificacion === "Huella"  ? "🖐️" :
-                               m.tipoVerificacion === "Rostro"  ? "👤" : "❓";
+  function _actualizarInfoFiltro(params) {
+    const partes = [];
+    if (params.fechaInicio) partes.push(`Desde ${params.fechaInicio}`);
+    if (params.fechaFin)   partes.push(`Hasta ${params.fechaFin}`);
+    if (params.departamento) partes.push(params.departamento);
+    if (params.empId) partes.push(`EMP-${params.empId}`);
+    document.getElementById('filter-info').textContent = partes.length ? '· ' + partes.join(' · ') : '';
+  }
 
-            return `
-            <tr class="${claseNueva}">
-                <td class="td-id">${i + 1}</td>
-                <td class="td-id">${escHtml(m.id)}</td>
-                <td class="td-emp">
-                    ${escHtml([m.firstName, m.lastName].filter(Boolean).join(" ") || "Nombre no disponible")}
-                    <small>${escHtml(m.empCode)}</small>
-                </td>
-                <td class="td-hora">${escHtml(m.punchTime)}</td>
-                <td>
-                    <span class="chip ${escHtml(m.etiquetaCss)}">
-                        ${escHtml(m.significadoReal)}
-                    </span>
-                </td>
-                <td>
-                    <span class="verif">
-                        ${iconoVerif} ${escHtml(m.tipoVerificacion)}
-                    </span>
-                </td>
-                <td class="td-id">${escHtml(m.terminalSn ?? "–")}</td>
-            </tr>`;
-        }).join("");
+  async function sincronizar() {
+    const btn = document.getElementById('btn-sync-top');
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span> Sincronizando…';
+    try {
+      const r = await Api.sincronizar();
+      Toast.ok(r.mensaje || 'Sincronización completada');
+      aplicarFiltros();
+    } catch (err) {
+      Toast.error('Error al sincronizar: ' + err.message);
+    } finally {
+      btn.classList.remove('loading');
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Sincronizar`;
+    }
+  }
 
-        $cuerpoTabla.innerHTML = html;
-        ultimosIds = idsNuevos;
+  async function sincronizarMaestros() {
+    const btn = document.getElementById('btn-sync-maestros');
+    if (btn) {
+      btn.classList.add('loading');
+      btn.innerHTML = '<span class="spinner"></span> Sincronizando Maestros…';
+    }
+    Toast.ok('Sincronizando nómina y estructura jerárquica desde ZKBio Time…');
+    try {
+      const r = await Api.sincronizarMaestros();
+      Toast.ok(r.mensaje || 'Catálogo maestro sincronizado exitosamente.');
+      await cargarDepartamentos();
+      aplicarFiltros();
+    } catch (err) {
+      Toast.error('Error al sincronizar maestros: ' + err.message);
+    } finally {
+      if (btn) {
+        btn.classList.remove('loading');
+        btn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Maestros`;
+      }
+    }
+  }
+
+  function exportarExcel() {
+    abrirModalExportar();
+  }
+
+  function abrirModalExportar() {
+    const depto = document.getElementById('f-departamento').value;
+    const empId = document.getElementById('f-empid').value.trim();
+    const selDepto = document.getElementById('export-filtro-depto');
+    if (selDepto && depto) selDepto.value = depto;
+    const inpEmp = document.getElementById('export-filtro-empid');
+    if (inpEmp && empId) inpEmp.value = empId;
+
+    document.getElementById('modal-exportar-excel').style.display = 'flex';
+  }
+
+  function cerrarModalExportar() {
+    const m = document.getElementById('modal-exportar-excel');
+    if (m) m.style.display = 'none';
+  }
+
+  function cambiarModoExportar(modo) {
+    const secMes = document.getElementById('seccion-export-mes');
+    const secDias = document.getElementById('seccion-export-dias');
+    const lblMes = document.getElementById('label-export-mes');
+    const lblDias = document.getElementById('label-export-dias');
+
+    if (modo === 'mes') {
+      secMes.style.display = 'block';
+      secDias.style.display = 'none';
+      lblMes.style.borderColor = 'var(--verde)';
+      lblMes.style.background = '#f0fdf4';
+      lblDias.style.borderColor = 'var(--borde)';
+      lblDias.style.background = '#fff';
+    } else {
+      secMes.style.display = 'none';
+      secDias.style.display = 'block';
+      lblDias.style.borderColor = 'var(--verde)';
+      lblDias.style.background = '#f0fdf4';
+      lblMes.style.borderColor = 'var(--borde)';
+      lblMes.style.background = '#fff';
+    }
+  }
+
+  function ejecutarExportarExcel() {
+    const modoRadio = document.querySelector('input[name="export-modo"]:checked');
+    const modo = modoRadio ? modoRadio.value : 'mes';
+    const params = {};
+
+    if (modo === 'mes') {
+      const mes = document.getElementById('export-mes-select').value;
+      if (mes) params.mes = mes;
+    } else {
+      const desde = document.getElementById('export-dia-desde').value;
+      const hasta = document.getElementById('export-dia-hasta').value;
+      if (desde) params.fechaInicio = desde;
+      if (hasta) params.fechaFin = hasta;
     }
 
-    /* ── Cuenta regresiva ─────────────────────────────────────── */
-    setInterval(() => {
-        segundosRestantes = Math.max(0, segundosRestantes - 1);
-        $cuentaAtras.textContent = segundosRestantes;
-        if (segundosRestantes === 0) {
-            cargarMarcaciones();
-        }
-    }, 1000);
-
-    /* ── Escape HTML básico para prevenir XSS ─────────────────── */
-    function escHtml(s) {
-        if (s === null || s === undefined) return "–";
-        return String(s)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
+    const depto = document.getElementById('export-filtro-depto').value;
+    const empId = document.getElementById('export-filtro-empid').value.trim();
+    if (depto) params.departamento = depto;
+    if (empId) {
+      if (/^\d+$/.test(empId)) params.empId = empId;
     }
 
-    /* ── Carga inicial ────────────────────────────────────────── */
-    cargarMarcaciones();
+    Toast.ok('Generando reporte Excel auditado según selección…');
+    Api.descargarExcel(params);
+    cerrarModalExportar();
+  }
+
+  async function cargarDepartamentos() {
+    const sel = document.getElementById('f-departamento');
+    const selExport = document.getElementById('export-filtro-depto');
+    const valorPrevio = sel.value;
+    try {
+      const depts = await Api.getDepartamentosMaestros(false);
+      sel.innerHTML = '<option value="">Todos los departamentos</option>';
+      if (selExport) selExport.innerHTML = '<option value="">Todos los departamentos</option>';
+
+      depts.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.nombre;
+        const indent = d.nivel > 0 ? '— '.repeat(d.nivel) : '';
+        opt.textContent = `${indent}${d.nombre} (${d.totalEmpleados || 0})`;
+        sel.appendChild(opt);
+
+        if (selExport) {
+          const optExp = document.createElement('option');
+          optExp.value = d.nombre;
+          optExp.textContent = d.nombre;
+          selExport.appendChild(optExp);
+        }
+      });
+      if (valorPrevio) sel.value = valorPrevio;
+
+      const selPadron = document.getElementById('padron-filtro-depto');
+      if (selPadron) {
+        selPadron.innerHTML = '<option value="">Todos los Departamentos</option>';
+        depts.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.nombre;
+          opt.textContent = d.nombre;
+          selPadron.appendChild(opt);
+        });
+      }
+    } catch (_) {
+      try {
+        const deptsFallback = await Api.getDepartamentos();
+        sel.innerHTML = '<option value="">Todos los departamentos</option>';
+        if (selExport) selExport.innerHTML = '<option value="">Todos los departamentos</option>';
+        deptsFallback.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d;
+          opt.textContent = d;
+          sel.appendChild(opt);
+          if (selExport) {
+            const optExp = document.createElement('option');
+            optExp.value = d;
+            optExp.textContent = d;
+            selExport.appendChild(optExp);
+          }
+        });
+        if (valorPrevio) sel.value = valorPrevio;
+      } catch (e) {}
+    }
+  }
+
+  // ── Inicialización ─────────────────────────────────────
+  async function init() {
+    const token = Api.getToken();
+    if (!token) {
+      window.location.href = '/login.html';
+      return;
+    }
+
+    const user = Api.getUsuarioActual();
+    const nameEl = document.getElementById('user-name');
+    const badgeEl = document.getElementById('user-badge');
+    const avatarEl = document.getElementById('user-avatar');
+    if (nameEl) nameEl.textContent = user.nombreCompleto || user.username;
+    if (avatarEl) avatarEl.textContent = (user.username || 'U')[0].toUpperCase();
+    if (badgeEl) {
+      badgeEl.textContent = user.esAdmin ? 'ADMIN' : 'RRHH';
+      badgeEl.style.background = user.esAdmin ? '#e0f2fe' : '#fef3c7';
+      badgeEl.style.color = user.esAdmin ? '#0369a1' : '#b45309';
+    }
+
+    // Restricciones de solo lectura para ROLE_RRHH
+    if (user.esRrhh) {
+      const btnSyncTop = document.getElementById('btn-sync-top');
+      if (btnSyncTop) btnSyncTop.style.display = 'none';
+      const btnSyncM = document.getElementById('btn-sync-maestros');
+      if (btnSyncM) btnSyncM.style.display = 'none';
+      const btnNuevo = document.getElementById('btn-nuevo-empleado');
+      if (btnNuevo) btnNuevo.style.display = 'none';
+      const navUsuarios = document.getElementById('nav-item-usuarios');
+      if (navUsuarios) navUsuarios.style.display = 'none';
+      // Deshabilitar switches de reglas
+      document.querySelectorAll('.rule-item input').forEach(inp => inp.disabled = true);
+    }
+
+    await cargarDepartamentos();
+    Dashboard.cargar();
+
+    // Atajo ESC para cerrar modales
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        Asistencia.cerrarModal();
+        Asistencia.cerrarModalEditar();
+        PagosDoctor.cerrarBoleta();
+        Empleados.cerrarModal();
+        Usuarios.cerrarModal();
+        cerrarModalExportar();
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+
+  return {
+    navegar,
+    aplicarFiltros,
+    limpiarFiltros,
+    sincronizar,
+    sincronizarMaestros,
+    exportarExcel,
+    abrirModalExportar,
+    cerrarModalExportar,
+    cambiarModoExportar,
+    ejecutarExportarExcel
+  };
+})();
 </script>
 
 </body>

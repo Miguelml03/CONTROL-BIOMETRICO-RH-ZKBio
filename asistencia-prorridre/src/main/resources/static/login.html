@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso Seguro — Control Biométrico PRORRIDRE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/prorridre.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0b192c 0%, #1e3e62 100%);
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #334155;
+    }
+    .login-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 440px;
+      padding: 2.5rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+      box-sizing: border-box;
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .login-logo {
+      width: 58px;
+      height: 58px;
+      background: #0284c7;
+      color: #ffffff;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 4px 12px rgba(2,132,199,0.35);
+    }
+    .login-header h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 0.35rem 0;
+    }
+    .login-header p {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin: 0;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 0.4rem;
+    }
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 0.9rem;
+      font-size: 0.92rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-sizing: border-box;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .form-control:focus {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(2,132,199,0.15);
+    }
+    .btn-login {
+      width: 100%;
+      padding: 0.8rem;
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: background 0.2s;
+    }
+    .btn-login:hover {
+      background: #0369a1;
+    }
+    .alert-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      padding: 0.7rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.83rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+    .demo-credentials {
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
+      border-top: 1px dashed #e2e8f0;
+      font-size: 0.78rem;
+      color: #64748b;
+    }
+    .demo-item {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.4rem;
+      background: #f8fafc;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .demo-item:hover {
+      background: #f1f5f9;
+    }
+    .badge-admin {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 0.7rem;
+    }
+    .badge-rrhh {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      font-weight: 600;
+      font-size: 0.7rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="login-header">
+    <div class="login-logo">P</div>
+    <h1>PRORRIDRE PUNO</h1>
+    <p>Control Biométrico y Planillas — FASE 5</p>
+  </div>
+
+  <div id="alert-error" class="alert-error"></div>
+
+  <form id="login-form">
+    <div class="form-group">
+      <label for="username">Usuario</label>
+      <input type="text" id="username" class="form-control" placeholder="admin, doctor o rrhh" required autofocus>
+    </div>
+
+    <div class="form-group">
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" class="form-control" placeholder="••••••••••••" required>
+    </div>
+
+    <button type="submit" id="btn-submit" class="btn-login">
+      <span>Ingresar al Sistema</span>
+    </button>
+  </form>
+
+  <div class="demo-credentials">
+    <div style="font-weight:600;margin-bottom:0.3rem">Credenciales configuradas (clic para autocompletar):</div>
+    <div class="demo-item" onclick="llenar('doctor', 'doctor2026')">
+      <span><strong>doctor</strong> (Director / Doctor)</span>
+      <span class="badge-admin">ROLE_ADMIN (Total)</span>
+    </div>
+    <div class="demo-item" onclick="llenar('rrhh', 'rrhh2026')">
+      <span><strong>rrhh</strong> (Recursos Humanos)</span>
+      <span class="badge-rrhh">ROLE_RRHH (Solo Lectura)</span>
+    </div>
+    <div class="demo-item" onclick="llenar('admin', 'prorridre2026')">
+      <span><strong>admin</strong> (Administrador IT)</span>
+      <span class="badge-admin">ROLE_ADMIN (Total)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  function llenar(u, p) {
+    document.getElementById('username').value = u;
+    document.getElementById('password').value = p;
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit');
+    const alertEl = document.getElementById('alert-error');
+    alertEl.style.display = 'none';
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    btn.disabled = true;
+    btn.innerHTML = 'Verificando…';
+
+    try {
+      const res = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.exitoso) {
+        throw new Error(data.mensaje || 'Error al iniciar sesión.');
+      }
+
+      // Guardar token y perfil en localStorage
+      localStorage.setItem('prorridre_token', data.token);
+      localStorage.setItem('prorridre_username', data.username);
+      localStorage.setItem('prorridre_nombre', data.nombreCompleto);
+      localStorage.setItem('prorridre_rol', data.rol);
+
+      window.location.href = '/index.html';
+    } catch (err) {
+      alertEl.textContent = err.message;
+      alertEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Ingresar al Sistema';
+    }
+  });
+
+  // Si ya tiene un token guardado, verificar validez y redirigir
+  (async () => {
+    const t = localStorage.getItem('prorridre_token');
+    if (t) {
+      try {
+        const r = await fetch('/api/v1/auth/me', { headers: { 'Authorization': 'Bearer ' + t } });
+        if (r.ok) {
+          window.location.href = '/index.html';
+        }
+      } catch (_) {}
+    }
+  })();
+</script>
+
+</body>
+</html>
+

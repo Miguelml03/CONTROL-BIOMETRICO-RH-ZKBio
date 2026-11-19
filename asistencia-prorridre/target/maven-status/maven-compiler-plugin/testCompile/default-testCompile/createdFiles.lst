@@ -1,1 +1,6 @@
+pe\gob\prorridre\asistencia\PayrollServiceTest.class
+pe\gob\prorridre\asistencia\zkbio\ZkBioClientTest.class
+pe\gob\prorridre\asistencia\DashboardKpiServiceTest.class
 pe\gob\prorridre\asistencia\AsistenciaApplicationTests.class
+pe\gob\prorridre\asistencia\AttendanceEngineServiceTest.class
+pe\gob\prorridre\asistencia\service\MarcacionServiceTest.class
