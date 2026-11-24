@@ -1,7 +1,6 @@
 pe\gob\prorridre\asistencia\dto\DashboardKpiDto$EmpleadoDesconocidoDto.class
 pe\gob\prorridre\asistencia\service\PayrollService.class
 pe\gob\prorridre\asistencia\security\JwtAuthenticationFilter.class
-pe\gob\prorridre\asistencia\service\ExcelExportService.class
 pe\gob\prorridre\asistencia\domain\repository\MarcacionRepository.class
 pe\gob\prorridre\asistencia\domain\repository\JustificacionAuditoriaRepository.class
 pe\gob\prorridre\asistencia\service\DashboardKpiService.class
@@ -14,6 +13,7 @@ pe\gob\prorridre\asistencia\controller\MaestroController.class
 pe\gob\prorridre\asistencia\zkbio\dto\TransaccionDto.class
 pe\gob\prorridre\asistencia\controller\AttendanceController.class
 pe\gob\prorridre\asistencia\model\Departamento.class
+pe\gob\prorridre\asistencia\dto\ResumenIndividualDto.class
 pe\gob\prorridre\asistencia\security\JwtUtil.class
 pe\gob\prorridre\asistencia\security\SecurityDataInitializer.class
 pe\gob\prorridre\asistencia\service\ZkBioIntegrationService.class

@@ -83,6 +83,9 @@ const Api = (() => {
     getAsistencia(params = {}) {
       return request(`${API_BASE}/asistencia${buildQs(params)}`);
     },
+    getResumenIndividual(params = {}) {
+      return request(`${API_BASE}/asistencia/resumen-individual${buildQs(params)}`);
+    },
     sincronizar() {
       return request(`${API_BASE}/asistencia/sincronizar`, { method: 'POST' });
     },

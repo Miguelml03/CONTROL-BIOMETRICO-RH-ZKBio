@@ -29,6 +29,7 @@ const Asistencia = (() => {
     if (estado.includes('Déficit'))      return `<span class="badge badge-ambar">▼ Déficit</span>`;
     if (estado.includes('Incompleto'))   return `<span class="badge badge-rojo">✖ Incompleto</span>`;
     if (estado.includes('Justificado'))  return `<span class="badge badge-morado">★ Justificado</span>`;
+    if (estado.includes('Sabatina') || estado.includes('Sábado')) return `<span class="badge badge-azul">📅 Sabatino</span>`;
     return `<span class="badge badge-gris">${estado}</span>`;
   }
 
@@ -111,7 +112,7 @@ const Asistencia = (() => {
           <td>${badgeCondicion(r.condicionIngreso)}</td>
           <td>${r.minutosTardanza > 0 ? `<span class="tardanza-min">${r.minutosTardanza} min</span>` : '<span style="color:var(--txt-muted)">0</span>'}</td>
           <td>${r.jornadaEfectiva ? String(r.jornadaEfectiva).substring(0,5) : '—'}</td>
-          <td>08:00</td>
+          <td>${r.jornadaNorma && r.jornadaNorma !== '--' ? String(r.jornadaNorma).substring(0,5) : '—'}</td>
           <td>${fmtBalance(r.balanceJornada)}</td>
           <td>${badgeEstado(r.estadoCumplimiento)}</td>
           <td>${r.almuerzoImputado ? '<span class="badge badge-azul">Imputado</span>' : ''}</td>
@@ -191,9 +192,90 @@ const Asistencia = (() => {
       registrosFiltrados = aplicarFiltroTab(todosLosRegistros, filtroTab);
       paginaActual = 1;
       renderTabla();
+      await cargarResumenIndividual(params);
     } catch (err) {
       console.error('[Asistencia]', err);
       Toast.error('Error al cargar datos: ' + err.message);
+    }
+  }
+
+  // ── Tabla Resumen Individual (4 Pilares) ──────────────────
+  async function cargarResumenIndividual(params = {}) {
+    const cont = document.getElementById('resumen-individual-container');
+    if (!cont) return;
+
+    try {
+      const res = await Api.getResumenIndividual(params);
+      if (!res || res.totalEsperadoIngreso === 0) {
+        cont.style.display = 'none';
+        return;
+      }
+
+      cont.style.display = 'block';
+      cont.innerHTML = `
+        <div style="max-width: 520px; background: #ffffff; border: 1px solid #000000; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); overflow: hidden; font-size: 0.82rem; margin-top: 1rem;">
+          <!-- Header Navy Blue #1F4E78 -->
+          <div style="background-color: #1F4E78; color: #ffffff; font-weight: 700; text-align: center; padding: 0.55rem 1rem; font-size: 0.88rem; letter-spacing: 0.5px; border-bottom: 1px solid #000000;">
+            RESUMEN INDIVIDUAL
+          </div>
+
+          <!-- Filas de datos generales -->
+          <table style="width: 100%; border-collapse: collapse;">
+            <tbody>
+              <tr style="border-bottom: 1px solid #000000;">
+                <td colspan="2" style="padding: 0.4rem 0.75rem; font-weight: 600; color: #0D2B4E; border-right: 1px solid #000000;">Días con registro en el período:</td>
+                <td style="padding: 0.4rem 0.75rem; text-align: center; font-weight: 600; width: 110px;">${res.diasConRegistro}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #000000;">
+                <td colspan="2" style="padding: 0.4rem 0.75rem; font-weight: 600; color: #0D2B4E; border-right: 1px solid #000000;">Tardanzas de ingreso:</td>
+                <td style="padding: 0.4rem 0.75rem; text-align: center; font-weight: 600; width: 110px;">${res.tardanzasIngresoDias}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #000000;">
+                <td colspan="2" style="padding: 0.4rem 0.75rem; font-weight: 600; color: #0D2B4E; border-right: 1px solid #000000;">Total minutos de tardanza:</td>
+                <td style="padding: 0.4rem 0.75rem; text-align: center; font-weight: 600; width: 110px;">${res.totalMinutosTardanza}</td>
+              </tr>
+
+              <!-- Sub-encabezado de 3 columnas para la matriz de 4 pilares -->
+              <tr style="border-bottom: 1px solid #000000; font-size: 0.76rem;">
+                <th style="padding: 0.4rem 0.75rem; text-align: left; background: #F8FAFC; border-right: 1px solid #000000;"></th>
+                <th style="padding: 0.4rem 0.5rem; text-align: center; background: #D6E8F7; color: #0D2B4E; font-weight: 700; border-right: 1px solid #000000; width: 140px;">TOTAL DE REGISTROS</th>
+                <th style="padding: 0.4rem 0.5rem; text-align: center; background: #FADBD8; color: #922B21; font-weight: 700; width: 110px;">NO REGISTRA</th>
+              </tr>
+
+              <!-- 4 Pilares -->
+              <tr style="border-bottom: 1px solid #000000;">
+                <td style="padding: 0.35rem 0.75rem; font-weight: 500; border-right: 1px solid #000000;">1. Ingreso</td>
+                <td style="padding: 0.35rem 0.5rem; text-align: center; border-right: 1px solid #000000;">${res.totalEsperadoIngreso}</td>
+                <td style="padding: 0.35rem 0.5rem; text-align: center; font-weight: 700; background: #FADBD8; color: #922B21;">${res.noRegistraIngreso}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #000000;">
+                <td style="padding: 0.35rem 0.75rem; font-weight: 500; border-right: 1px solid #000000;">2. Salida a refrigerio</td>
+                <td style="padding: 0.35rem 0.5rem; text-align: center; border-right: 1px solid #000000;">${res.totalEsperadoSalidaRefrigerio}</td>
+                <td style="padding: 0.35rem 0.5rem; text-align: center; font-weight: 700; background: #FADBD8; color: #922B21;">${res.noRegistraSalidaRefrigerio}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #000000;">
+                <td style="padding: 0.35rem 0.75rem; font-weight: 500; border-right: 1px solid #000000;">3. Retorno de refrigerio</td>
+                <td style="padding: 0.35rem 0.5rem; text-align: center; border-right: 1px solid #000000;">${res.totalEsperadoRetornoRefrigerio}</td>
+                <td style="padding: 0.35rem 0.5rem; text-align: center; font-weight: 700; background: #FADBD8; color: #922B21;">${res.noRegistraRetornoRefrigerio}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #000000;">
+                <td style="padding: 0.35rem 0.75rem; font-weight: 500; border-right: 1px solid #000000;">4. Salida final</td>
+                <td style="padding: 0.35rem 0.5rem; text-align: center; border-right: 1px solid #000000;">${res.totalEsperadoSalidaFinal}</td>
+                <td style="padding: 0.35rem 0.5rem; text-align: center; font-weight: 700; background: #FADBD8; color: #922B21;">${res.noRegistraSalidaFinal}</td>
+              </tr>
+
+              <!-- Fila de cierre -->
+              <tr>
+                <td colspan="2" style="padding: 0.4rem 0.75rem; font-weight: 600; color: #0D2B4E; border-right: 1px solid #000000;">Días con marcaciones fuera de rango:</td>
+                <td style="padding: 0.4rem 0.75rem; text-align: center; font-weight: 600;">${res.diasConMarcacionesFueraDeRango}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    } catch (e) {
+      console.warn('[ResumenIndividual]', e);
+      cont.style.display = 'none';
     }
   }
 

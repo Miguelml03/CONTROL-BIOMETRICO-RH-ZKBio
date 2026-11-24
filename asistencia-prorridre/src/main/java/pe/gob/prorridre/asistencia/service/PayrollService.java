@@ -302,7 +302,8 @@ public class PayrollService {
         List<LiquidacionPagoDto.JustificacionResumenDto> justificacionesResumen = new ArrayList<>();
 
         for (RegistroAsistencia r : registros) {
-            if (r.getHorasEfectivasDecimal() != null) {
+            boolean esSabado = r.getFecha() != null && r.getFecha().getDayOfWeek() == DayOfWeek.SATURDAY;
+            if (!esSabado && r.getHorasEfectivasDecimal() != null) {
                 sumHorasEfectivas += r.getHorasEfectivasDecimal();
             }
 
@@ -343,8 +344,8 @@ public class PayrollService {
                 minNoJustificados += tardActual;
             }
 
-            // Balance de jornada (Excedente vs Déficit)
-            if (r.getBalanceJornada() != null) {
+            // Balance de jornada (Excedente vs Déficit) - Excluir sábados de sumatorias
+            if (!esSabado && r.getBalanceJornada() != null) {
                 if (r.getBalanceJornada() > 0) {
                     sumHorasExcedente += r.getBalanceJornada();
                 } else if (r.getBalanceJornada() < 0) {
@@ -352,9 +353,9 @@ public class PayrollService {
                 }
             }
 
-            // Omisión de marcado
+            // Omisión de marcado (solo aplica a días hábiles Lunes a Viernes)
             String cond = r.getCondicionIngreso() != null ? r.getCondicionIngreso() : "";
-            if ((cond.contains("Omisión") || cond.contains("Sin Marcación")) && !estaJustificado) {
+            if (!esSabado && (cond.contains("Omisión") || cond.contains("Sin Marcación")) && !estaJustificado) {
                 cantidadOmisiones++;
             }
         }

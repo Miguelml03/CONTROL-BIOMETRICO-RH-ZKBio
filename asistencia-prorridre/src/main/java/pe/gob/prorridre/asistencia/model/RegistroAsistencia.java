@@ -133,6 +133,10 @@ public class RegistroAsistencia {
     @Column(name = "observacion_doctor", length = 500)
     private String observacionDoctor;
 
+    /** Marcaciones fuera de rango o duplicadas extra */
+    @Column(name = "otras_marcaciones", length = 500)
+    private String otrasMarcaciones;
+
     /** Tardanza original calculada por el biométrico antes de justificar */
     @Column(name = "minutos_tardanza_original")
     private Long minutosTardanzaOriginal;
@@ -227,6 +231,9 @@ public class RegistroAsistencia {
 
     public String getObservacionDoctor() { return observacionDoctor; }
     public void setObservacionDoctor(String observacionDoctor) { this.observacionDoctor = observacionDoctor; }
+
+    public String getOtrasMarcaciones() { return otrasMarcaciones; }
+    public void setOtrasMarcaciones(String otrasMarcaciones) { this.otrasMarcaciones = otrasMarcaciones; }
 
     public Long getMinutosTardanzaOriginal() { return minutosTardanzaOriginal; }
     public void setMinutosTardanzaOriginal(Long minutosTardanzaOriginal) { this.minutosTardanzaOriginal = minutosTardanzaOriginal; }

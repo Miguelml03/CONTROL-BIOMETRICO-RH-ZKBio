@@ -522,6 +522,7 @@ public class ExcelCsvImportService {
         dto.setAlmuerzoImputado(e.getAlmuerzoImputado());
         dto.setEstadoJustificacion(e.getEstadoJustificacion());
         dto.setObservacionDoctor(e.getObservacionDoctor());
+        dto.setOtrasMarcaciones(e.getOtrasMarcaciones());
         dto.setMinutosTardanzaOriginal(e.getMinutosTardanzaOriginal());
         dto.setBalanceJornadaOriginal(e.getBalanceJornadaOriginal());
         return dto;
@@ -538,6 +539,7 @@ public class ExcelCsvImportService {
         destino.setInicioAlmuerzo(origen.getInicioAlmuerzo());
         destino.setFinAlmuerzo(origen.getFinAlmuerzo());
         destino.setHoraSalida(origen.getHoraSalida());
+        destino.setOtrasMarcaciones(origen.getOtrasMarcaciones());
         destino.setCondicionIngreso(origen.getCondicionIngreso());
         destino.setMinutosTardanza(origen.getMinutosTardanza());
         destino.setJornadaEfectiva(origen.getJornadaEfectiva());
@@ -547,6 +549,12 @@ public class ExcelCsvImportService {
         destino.setBalanceJornada(origen.getBalanceJornada());
         destino.setEstadoCumplimiento(origen.getEstadoCumplimiento());
         destino.setAlmuerzoImputado(origen.getAlmuerzoImputado());
+        if (destino.getObservacionDoctor() == null || destino.getObservacionDoctor().isEmpty()
+                || destino.getObservacionDoctor().startsWith("NO REGISTRA")
+                || destino.getObservacionDoctor().startsWith("JORNADA SABATINA")
+                || "SIN INCIDENCIAS".equals(destino.getObservacionDoctor())) {
+            destino.setObservacionDoctor(origen.getObservacionDoctor());
+        }
         if (destino.getEstadoJustificacion() == null || "NINGUNO".equalsIgnoreCase(destino.getEstadoJustificacion())) {
             destino.setMinutosTardanza(origen.getMinutosTardanza());
             destino.setBalanceJornada(origen.getBalanceJornada());

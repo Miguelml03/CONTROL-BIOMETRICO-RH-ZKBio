@@ -8,6 +8,7 @@ F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\
 F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\service\AttendanceEngineService.java
 F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\zkbio\dto\TransaccionDto.java
 F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\config\CorsConfig.java
+F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\dto\ResumenIndividualDto.java
 F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\web\dto\MarcacionResponse.java
 F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\entity\EstadoMarcacion.java
 F:\PROYECTOS WEB PRORRIDRE\BIOMETRICO-PRO\asistencia-prorridre\src\main\java\pe\gob\prorridre\asistencia\domain\repository\EmpleadoConfigFinancieraRepository.java

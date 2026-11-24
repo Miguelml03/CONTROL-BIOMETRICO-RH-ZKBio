@@ -1,5 +1,6 @@
 package pe.gob.prorridre.asistencia.service;
 
+import pe.gob.prorridre.asistencia.dto.ResumenIndividualDto;
 import pe.gob.prorridre.asistencia.model.RegistroAsistencia;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -32,38 +34,29 @@ public class AttendanceEngineService {
     private static final Logger log = LoggerFactory.getLogger(AttendanceEngineService.class);
 
     /* -----------------------------------------------------------------------
-     * Constantes de Reglas y Ventanas Horarias PRORRIDRE
+     * Constantes de Reglas y Ventanas Horarias PRORRIDRE (4 Pilares Auditados)
      * --------------------------------------------------------------------- */
 
     /** Límite inferior de entrada válida */
-    public static final LocalTime ENTRADA_MIN = LocalTime.of(5, 0, 0);
+    public static final LocalTime ENTRADA_MIN = LocalTime.of(6, 0, 0);
 
-    /** Límite superior de entrada válida */
-    public static final LocalTime ENTRADA_MAX = LocalTime.of(11, 30, 0);
-
-    /** Hora oficial de inicio de jornada */
-    public static final LocalTime HORA_INICIO_OFICIAL = LocalTime.of(8, 0, 0);
-
-    /** Hora límite de tolerancia matutina */
+    /** Hora límite de tolerancia matutina (sin descuento de salario) */
     public static final LocalTime HORA_TOLERANCIA_MAX = LocalTime.of(8, 10, 0);
 
-    /** Límite inferior de inicio de almuerzo */
-    public static final LocalTime ALMUERZO_INICIO_MIN = LocalTime.of(12, 0, 0);
+    /** Límite superior de entrada para asignar como ingreso antes del refrigerio */
+    public static final LocalTime ENTRADA_MAX = LocalTime.of(12, 49, 59);
 
-    /** Límite superior de inicio de almuerzo */
-    public static final LocalTime ALMUERZO_INICIO_MAX = LocalTime.of(13, 35, 0);
+    /** Pilar 2: Salida a refrigerio (12:50:00 - 13:30:00) */
+    public static final LocalTime REFRIGERIO_SALIDA_MIN = LocalTime.of(12, 50, 0);
+    public static final LocalTime REFRIGERIO_SALIDA_MAX = LocalTime.of(13, 30, 0);
 
-    /** Límite inferior de fin de almuerzo */
-    public static final LocalTime ALMUERZO_FIN_MIN = LocalTime.of(13, 35, 1);
+    /** Pilar 3: Retorno de refrigerio (13:45:00 - 14:10:00) */
+    public static final LocalTime REFRIGERIO_RETORNO_MIN = LocalTime.of(13, 45, 0);
+    public static final LocalTime REFRIGERIO_RETORNO_MAX = LocalTime.of(14, 10, 0);
 
-    /** Límite superior de fin de almuerzo */
-    public static final LocalTime ALMUERZO_FIN_MAX = LocalTime.of(15, 30, 0);
-
-    /** Límite inferior de salida vespertina habitual */
-    public static final LocalTime SALIDA_TARDE_MIN = LocalTime.of(15, 30, 1);
-
-    /** Hora umbral para considerar media jornada matutina (sin descuento de almuerzo) */
-    public static final LocalTime UMBRAL_MEDIA_JORNADA = LocalTime.of(14, 0, 0);
+    /** Pilar 4: Salida final (17:00:00 - 23:59:59) */
+    public static final LocalTime SALIDA_FINAL_MIN = LocalTime.of(17, 0, 0);
+    public static final LocalTime SALIDA_FINAL_MAX = LocalTime.of(23, 59, 59);
 
     /** Segundos mínimos entre dos marcaciones para no ser consideradas rebote (5 minutos = 300 s) */
     public static final long DEBOUNCE_SEGUNDOS = 300L;
@@ -190,7 +183,7 @@ public class AttendanceEngineService {
     }
 
     /**
-     * 2. ASIGNACIÓN POR VENTANAS HORARIAS (TIME BUCKETS)
+     * 2. ASIGNACIÓN POR VENTANAS HORARIAS (4 PILARES ESTRICTOS)
      */
     private void asignarVentanasHorarias(RegistroAsistencia reg, List<LocalTime> horas) {
         if (horas.isEmpty()) {
@@ -198,90 +191,100 @@ public class AttendanceEngineService {
             reg.setInicioAlmuerzo(null);
             reg.setFinAlmuerzo(null);
             reg.setHoraSalida(null);
+            reg.setOtrasMarcaciones(null);
             return;
         }
 
-        // REGLA CRÍTICA CONTRA FALSAS TARDANZAS VESPERTINAS:
-        // Si hay una sola marcación en el día y ocurrió después de las 12:00:00 (ej. 20:29:19 o 18:28:10),
-        // NUNCA asignarla a horaEntrada. Se asigna a salida o almuerzo según ventana,
-        // dejando horaEntrada = null y minutosTardanza = 0 ("Sin Marcación (Omisión Entrada)").
-        if (horas.size() == 1) {
-            LocalTime unica = horas.get(0);
-            if (!unica.isBefore(ALMUERZO_INICIO_MIN)) {
-                reg.setHoraEntrada(null);
-                if (!unica.isBefore(ALMUERZO_INICIO_MIN) && !unica.isAfter(ALMUERZO_INICIO_MAX)) {
-                    reg.setInicioAlmuerzo(unica);
-                } else if (!unica.isBefore(ALMUERZO_FIN_MIN) && !unica.isAfter(ALMUERZO_FIN_MAX)) {
-                    reg.setFinAlmuerzo(unica);
+        boolean esSabado = reg.getFecha() != null && reg.getFecha().getDayOfWeek() == DayOfWeek.SATURDAY;
+
+        if (esSabado) {
+            // SÁBADOS: Solo exigir Ingreso (ventana 06:00:00 a 08:10:00 o tardanza)
+            // Si existe una segunda marcación (ej. 12:13:59), colocarla en L (Hora Salida) solo como dato informativo
+            // sin marcarla como fuera de rango. Si no hay salida, NO genera error ni observación.
+            // Las columnas de almuerzo (J y K) siempre quedan vacías (null).
+            LocalTime entrada = null;
+            LocalTime salida = null;
+            List<LocalTime> extras = new ArrayList<>();
+            for (LocalTime t : horas) {
+                if (entrada == null && !t.isBefore(ENTRADA_MIN) && !t.isAfter(LocalTime.of(13, 30, 0))) {
+                    entrada = t;
+                } else if (entrada != null && salida == null) {
+                    salida = t; // Segunda marcación informativa en L (sin considerarse fuera de rango)
                 } else {
-                    reg.setHoraSalida(unica);
+                    extras.add(t);
                 }
-                return;
             }
+            reg.setHoraEntrada(entrada);
+            reg.setInicioAlmuerzo(null);
+            reg.setFinAlmuerzo(null);
+            reg.setHoraSalida(salida);
+            reg.setOtrasMarcaciones(extras.isEmpty() ? null : extras.stream().map(t -> t.format(FMT_HORA)).collect(Collectors.joining(", ")));
+            return;
         }
 
-        // Columna I: horaEntrada - Primera marcación válida entre 05:00:00 y 11:30:00
+        // LUNES A VIERNES: 4 Pilares Estrictos
+        // 1. Ingreso: 06:00:00 - 12:49:59 (tolerancia hasta 08:10:00)
+        // 2. Salida a refrigerio: 12:50:00 - 13:30:00
+        // 3. Retorno de refrigerio: 13:45:00 - 14:10:00
+        // 4. Salida final: 17:00:00 - 23:59:59
+
         LocalTime entrada = null;
-        for (LocalTime t : horas) {
-            if (!t.isBefore(ENTRADA_MIN) && !t.isAfter(ENTRADA_MAX)) {
-                entrada = t;
-                break;
-            }
-        }
-        reg.setHoraEntrada(entrada);
-
-        // Columna J: inicioAlmuerzo - Primera marcación válida entre 12:00:00 y 13:35:00
         LocalTime iniAlm = null;
-        for (LocalTime t : horas) {
-            if (t.equals(entrada)) continue;
-            if (!t.isBefore(ALMUERZO_INICIO_MIN) && !t.isAfter(ALMUERZO_INICIO_MAX)) {
-                iniAlm = t;
-                break;
-            }
-        }
-        reg.setInicioAlmuerzo(iniAlm);
-
-        // Columna K: finAlmuerzo - Última marcación válida entre 13:35:01 y 15:30:00
         LocalTime finAlm = null;
-        for (int i = horas.size() - 1; i >= 0; i--) {
-            LocalTime t = horas.get(i);
-            if (t.equals(entrada) || t.equals(iniAlm)) continue;
-            if (!t.isBefore(ALMUERZO_FIN_MIN) && !t.isAfter(ALMUERZO_FIN_MAX)) {
-                finAlm = t;
-                break;
-            }
-        }
-        reg.setFinAlmuerzo(finAlm);
-
-        // Columna L: horaSalida
-        // Última marcación válida ocurrida entre 15:30:01 y 23:59:59
-        // (o entre 11:30:01 y 13:30:00 si solo trabajó medio turno matutino y no hay timbradas posteriores)
         LocalTime salida = null;
+        List<LocalTime> extras = new ArrayList<>();
+
+        // Encontrar la última marcación en la ventana de salida final si existe
+        int idxUltimaSalida = -1;
         for (int i = horas.size() - 1; i >= 0; i--) {
             LocalTime t = horas.get(i);
-            if (t.equals(entrada) || t.equals(iniAlm) || t.equals(finAlm)) continue;
-            if (!t.isBefore(SALIDA_TARDE_MIN)) {
+            if (!t.isBefore(SALIDA_FINAL_MIN) && !t.isAfter(SALIDA_FINAL_MAX)) {
+                idxUltimaSalida = i;
                 salida = t;
                 break;
             }
         }
 
-        // Si no hubo salida después de las 15:30:01, verificar si es retiro de medio turno matutino
-        if (salida == null && entrada != null) {
-            for (int i = horas.size() - 1; i >= 0; i--) {
-                LocalTime t = horas.get(i);
-                if (t.isAfter(entrada) && !t.isBefore(LocalTime.of(11, 30, 1)) && !t.isAfter(LocalTime.of(13, 30, 0))) {
-                    salida = t;
-                    // Si se había asignado como inicioAlmuerzo, lo reasignamos a salida definitiva del medio turno
-                    if (t.equals(reg.getInicioAlmuerzo())) {
-                        reg.setInicioAlmuerzo(null);
-                    }
-                    break;
-                }
+        for (int i = 0; i < horas.size(); i++) {
+            LocalTime t = horas.get(i);
+
+            // Si es la marcación seleccionada para la salida final
+            if (i == idxUltimaSalida) {
+                continue;
             }
+
+            // Ventana 1: Ingreso (06:00:00 a 12:49:59)
+            if (entrada == null && !t.isBefore(ENTRADA_MIN) && !t.isAfter(ENTRADA_MAX)) {
+                entrada = t;
+                continue;
+            }
+
+            // Ventana 2: Salida a refrigerio (12:50:00 a 13:30:00)
+            if (iniAlm == null && !t.isBefore(REFRIGERIO_SALIDA_MIN) && !t.isAfter(REFRIGERIO_SALIDA_MAX)) {
+                iniAlm = t;
+                continue;
+            }
+
+            // Ventana 3: Retorno de refrigerio (13:45:00 a 14:10:00)
+            if (finAlm == null && !t.isBefore(REFRIGERIO_RETORNO_MIN) && !t.isAfter(REFRIGERIO_RETORNO_MAX)) {
+                finAlm = t;
+                continue;
+            }
+
+            // Si no calza en ninguna ventana o es duplicada, pasa a otrasMarcaciones (fuera de rango)
+            extras.add(t);
         }
 
+        reg.setHoraEntrada(entrada);
+        reg.setInicioAlmuerzo(iniAlm);
+        reg.setFinAlmuerzo(finAlm);
         reg.setHoraSalida(salida);
+
+        if (!extras.isEmpty()) {
+            reg.setOtrasMarcaciones(extras.stream().map(t -> t.format(FMT_HORA)).collect(Collectors.joining(", ")));
+        } else {
+            reg.setOtrasMarcaciones(null);
+        }
     }
 
     /**
@@ -292,10 +295,9 @@ public class AttendanceEngineService {
      *   * horaEntrada <= 08:10:00 -> "A Tiempo"
      *   * horaEntrada > 08:10:00 -> "Tardanza"
      *
-     * - Columna N (Regla de Tolerancia Retroactiva):
+     * - Columna N (Regla de Tolerancia de 10 min):
      *   * horaEntrada == null o horaEntrada <= 08:10:00 -> 0
-     *   * horaEntrada > 08:10:00 -> Math.round( ChronoUnit.SECONDS.between(08:00:00, horaEntrada) / 60.0 )
-     *     (se calcula contra las 08:00:00, no contra las 08:10:00).
+     *   * horaEntrada > 08:10:00 -> Minutos excedentes posteriores a las 08:10:00.
      */
     private void evaluarCondicionIngresoYTardanza(RegistroAsistencia reg) {
         LocalTime entrada = reg.getHoraEntrada();
@@ -307,12 +309,11 @@ public class AttendanceEngineService {
         }
 
         if (!entrada.isAfter(HORA_TOLERANCIA_MAX)) {
-            // Entrada entre 05:00:00 y 08:10:00 (A Tiempo / Dentro de tolerancia)
+            // Entrada dentro del horario oficial + tolerancia de 10 min
             reg.setCondicionIngreso("A Tiempo");
             reg.setMinutosTardanza(0L);
         } else {
-            // Entrada posterior a las 08:10:00 (Tardanza después de tolerancia de 10 min)
-            // La tolerancia hasta las 08:10:00 no afecta el salario; solo los minutos posteriores
+            // Entrada posterior a las 08:10:00 (Tardanza después de tolerancia)
             reg.setCondicionIngreso("Tardanza");
             long segundosDesdeTolerancia = ChronoUnit.SECONDS.between(HORA_TOLERANCIA_MAX, entrada);
             long minutos = Math.max(0L, Math.round(segundosDesdeTolerancia / 60.0));
@@ -330,117 +331,133 @@ public class AttendanceEngineService {
     }
 
     /**
-     * 4. JORNADA EFECTIVA, ALMUERZO Y BALANCE
+     * 4. JORNADA EFECTIVA, ALMUERZO Y BALANCE (LÓGICA ESTRICTA DE 4 PILARES)
      *
-     * - Columna O:
-     *   * Si horaEntrada == null o horaSalida == null o horaSalida <= horaEntrada -> jornadaEfectiva = null, horasEfectivas = 0.0
-     *   * duracionBruta = horaSalida - horaEntrada
-     *   * Descuento Almuerzo:
-     *     - Si falta inicio o fin de almuerzo y salida >= 15:30 -> descuento fijo de 1 hora (13:00 a 14:00)
-     *     - Si salida < 14:00 -> descuento almuerzo = 0
-     *     - Si existe almuerzo real (J:K) dentro de I:L -> duracion real (si está entre 15 min y 2 horas, de lo contrario 1 hora fija)
-     *   * jornadaEfectiva = Math.max(0, duracionBruta - descuentoAlmuerzo)
-     *
-     * - Columna P:
-     *   * jornadaNorma = "08:00:00" (8.0 horas)
-     *
-     * - Columna Q:
-     *   * Si jornadaEfectiva == null -> balanceJornada = null
-     *   * Si existe -> ROUND(horasEfectivasDecimal - 8.0, 2)
+     * 1. Cero relleno ficticio: si no timbró refrigerio, queda null y NO se inventa 13:00 ni 14:00 ni se resta 1h fija.
+     * 2. Jornada Efectiva y Balance SOLO se calculan si los 4 pilares están registrados (I, J, K, L != null).
+     * 3. Sábados: No computable en horas semanales (jornadaEfectiva=null, jornadaNorma=null, balanceJornada=null).
+     * 4. Observaciones: Evaluaciones independientes unidas por '; '.
      */
     private void calcularJornadasYBalance(RegistroAsistencia reg) {
-        reg.setJornadaNorma(JORNADA_NORMA_TEXTO);
-        reg.setHorasNormaDecimal(JORNADA_NORMA_HORAS);
+        reg.setAlmuerzoImputado(false); // CERO relleno ficticio
 
-        LocalTime entrada = reg.getHoraEntrada();
-        LocalTime salida = reg.getHoraSalida();
-
-        // Si falta entrada o salida, o salida es anterior a entrada -> jornada incompleta
-        if (entrada == null || salida == null || !salida.isAfter(entrada)) {
+        boolean esSabado = reg.getFecha() != null && reg.getFecha().getDayOfWeek() == DayOfWeek.SATURDAY;
+        if (esSabado) {
             reg.setJornadaEfectiva(null);
             reg.setHorasEfectivasDecimal(0.0);
-            reg.setBalanceJornada(null); // Evita error #¡VALOR!
-            reg.setAlmuerzoImputado(false);
+            reg.setJornadaNorma(null); // No computable, NO "08:00:00"
+            reg.setHorasNormaDecimal(0.0);
+            reg.setBalanceJornada(null);
+            if (reg.getHoraEntrada() != null) {
+                reg.setObservacionDoctor("JORNADA SABATINA - SIN INCIDENCIAS");
+            } else {
+                reg.setObservacionDoctor("NO REGISTRA INGRESO");
+            }
             return;
         }
 
-        long duracionBrutaSegundos = Duration.between(entrada, salida).getSeconds();
-        long descuentoAlmuerzoSegundos = 0L;
-        boolean imputado = false;
+        // LUNES A VIERNES:
+        reg.setJornadaNorma(JORNADA_NORMA_TEXTO); // "08:00:00"
+        reg.setHorasNormaDecimal(JORNADA_NORMA_HORAS); // 8.0
 
-        LocalTime iniAlm = reg.getInicioAlmuerzo();
-        LocalTime finAlm = reg.getFinAlmuerzo();
-
-        // REGLAS DE REFRIGERIO (ALMUERZO):
-        if (!salida.isBefore(UMBRAL_MEDIA_JORNADA)) {
-            // Trabajador laboró después de las 14:00:00
-            if (iniAlm != null && finAlm != null && finAlm.isAfter(iniAlm)
-                    && !iniAlm.isBefore(entrada) && !finAlm.isAfter(salida)) {
-                // Almuerzo timbrado dentro de la jornada
-                long segReal = Duration.between(iniAlm, finAlm).getSeconds();
-                // Protección contra almuerzos irreales (menor a 15 min o mayor a 2 horas)
-                if (segReal >= 900 && segReal <= 7200) {
-                    descuentoAlmuerzoSegundos = segReal;
-                    imputado = false;
-                } else {
-                    // Almuerzo anómalo: aplicar reglamentario de 1 hora
-                    descuentoAlmuerzoSegundos = 3600L;
-                    imputado = true;
-                }
-            } else if (!salida.isBefore(SALIDA_TARDE_MIN)) {
-                // Falta inicio o fin de almuerzo y salió en la tarde (>= 15:30): descuento fijo reglamentario de 1 hora
-                descuentoAlmuerzoSegundos = 3600L;
-                imputado = true;
-                // Asignar horas reglamentarias para trazabilidad visual si están vacías
-                if (iniAlm == null && finAlm == null) {
-                    reg.setInicioAlmuerzo(LocalTime.of(13, 0, 0));
-                    reg.setFinAlmuerzo(LocalTime.of(14, 0, 0));
-                }
-            }
-        } else {
-            // Se retiró antes de las 14:00 (media jornada): descuento de almuerzo es 0
-            descuentoAlmuerzoSegundos = 0L;
-            imputado = false;
+        // 4. GENERACIÓN EXHAUSTIVA DE LA COLUMNA OBSERVACIONES (L-V)
+        List<String> obs = new ArrayList<>();
+        if (reg.getHoraEntrada() == null) {
+            obs.add("NO REGISTRA INGRESO");
+        }
+        if (reg.getInicioAlmuerzo() == null) {
+            obs.add("NO REGISTRA SALIDA A REFRIGERIO");
+        }
+        if (reg.getFinAlmuerzo() == null) {
+            obs.add("NO REGISTRA RETORNO DE REFRIGERIO");
+        }
+        if (reg.getHoraSalida() == null) {
+            obs.add("NO REGISTRA SALIDA FINAL");
+        }
+        if (reg.getOtrasMarcaciones() != null && !reg.getOtrasMarcaciones().trim().isEmpty()) {
+            obs.add("MARCACIÓN FUERA DE RANGO: " + reg.getOtrasMarcaciones().trim());
         }
 
-        reg.setAlmuerzoImputado(imputado);
+        if (obs.isEmpty()) {
+            reg.setObservacionDoctor("SIN INCIDENCIAS");
+        } else {
+            reg.setObservacionDoctor(String.join("; ", obs));
+        }
 
-        long segundosEfectivos = Math.max(0L, duracionBrutaSegundos - descuentoAlmuerzoSegundos);
+        // 2. CÁLCULO EXACTO AL SEGUNDO DE JORNADA Y BALANCE (SOLO CON LOS 4 PILARES COMPLETOS EN L-V)
+        boolean cuatroCompletos = reg.getHoraEntrada() != null
+                && reg.getInicioAlmuerzo() != null
+                && reg.getFinAlmuerzo() != null
+                && reg.getHoraSalida() != null;
 
-        // Formato HH:mm:ss
-        long horas = segundosEfectivos / 3600;
-        long minutos = (segundosEfectivos % 3600) / 60;
-        long segundos = segundosEfectivos % 60;
+        if (!cuatroCompletos) {
+            reg.setJornadaEfectiva(null);
+            reg.setHorasEfectivasDecimal(0.0);
+            reg.setBalanceJornada(null);
+            return;
+        }
+
+        // Matemática exacta al segundo (java.time.Duration):
+        LocalTime entrada = reg.getHoraEntrada();
+        LocalTime iniAlm = reg.getInicioAlmuerzo();
+        LocalTime finAlm = reg.getFinAlmuerzo();
+        LocalTime salida = reg.getHoraSalida();
+
+        long segManana = Math.max(0L, Duration.between(entrada, iniAlm).getSeconds());
+        long segTarde = Math.max(0L, Duration.between(finAlm, salida).getSeconds());
+        long segEfectivos = segManana + segTarde;
+
+        long horas = segEfectivos / 3600;
+        long minutos = (segEfectivos % 3600) / 60;
+        long segundos = segEfectivos % 60;
         reg.setJornadaEfectiva(String.format("%02d:%02d:%02d", horas, minutos, segundos));
 
-        // Horas efectivas decimales redondeadas a 2 decimales
-        double horasDecimal = BigDecimal.valueOf(segundosEfectivos / 3600.0)
-                .setScale(2, RoundingMode.HALF_UP)
-                .doubleValue();
+        double horasDecimal = Math.round((segEfectivos / 3600.0) * 100.0) / 100.0;
         reg.setHorasEfectivasDecimal(horasDecimal);
 
-        // Balance de jornada: ROUND((horasEfectivasDecimal - 8.0), 2)
-        double balance = BigDecimal.valueOf(horasDecimal - JORNADA_NORMA_HORAS)
-                .setScale(2, RoundingMode.HALF_UP)
-                .doubleValue();
+        long segBalance = segEfectivos - 28800L; // Base 8 horas exactas = 28800 s
+        double balance = Math.round((segBalance / 3600.0) * 100.0) / 100.0;
         reg.setBalanceJornada(balance);
     }
 
     /**
-     * 5. ESTADO DE CUMPLIMIENTO (Columna R)
+     * 5. ESTADO DE CUMPLIMIENTO Y CONDICIÓN INTEGRAL
      *
-     * - Si jornadaEfectiva == null -> "Incompleto (Falta Salida/Entrada)"
-     * - Si balanceJornada > 0.08 -> "Excedente de Jornada"
-     * - Si balanceJornada < -0.08 -> "Déficit de Jornada"
-     * - En caso contrario (entre -0.08 y +0.08) -> "Jornada Reglamentaria"
+     * - Si falta 1 o más pilares en Lunes-Viernes: "Incompleto (Falta Marcación)". NUNCA "Excedente de Jornada".
+     * - Sábados: "Jornada Sabatina" (si marcó entrada) o "Sin Ingreso (Sábado)".
      */
     private void evaluarEstadoCumplimiento(RegistroAsistencia reg) {
-        if (reg.getJornadaEfectiva() == null || reg.getBalanceJornada() == null) {
-            reg.setEstadoCumplimiento("Incompleto (Falta Salida/Entrada)");
+        boolean esSabado = reg.getFecha() != null && reg.getFecha().getDayOfWeek() == DayOfWeek.SATURDAY;
+        if (esSabado) {
+            if (reg.getHoraEntrada() != null) {
+                reg.setEstadoCumplimiento("Jornada Sabatina");
+            } else {
+                reg.setEstadoCumplimiento("Sin Ingreso (Sábado)");
+            }
             return;
         }
 
-        double balance = reg.getBalanceJornada();
+        // LUNES A VIERNES:
+        boolean cuatroCompletos = reg.getHoraEntrada() != null
+                && reg.getInicioAlmuerzo() != null
+                && reg.getFinAlmuerzo() != null
+                && reg.getHoraSalida() != null;
+
+        if (!cuatroCompletos) {
+            reg.setEstadoCumplimiento("Incompleto (Falta Marcación)");
+            return;
+        }
+
+        // Con los 4 pilares completos:
+        boolean sinOtrasMarcaciones = (reg.getOtrasMarcaciones() == null || reg.getOtrasMarcaciones().trim().isEmpty());
+        boolean sinTardanza = (reg.getMinutosTardanza() != null && reg.getMinutosTardanza() == 0L);
+
+        // Condición integral: "A Tiempo" / "SIN INCIDENCIAS"
+        if (sinTardanza && sinOtrasMarcaciones && "A Tiempo".equals(reg.getCondicionIngreso())) {
+            reg.setCondicionIngreso("A Tiempo / SIN INCIDENCIAS");
+        }
+
+        double balance = reg.getBalanceJornada() != null ? reg.getBalanceJornada() : 0.0;
         if (balance > TOLERANCIA_BALANCE) {
             reg.setEstadoCumplimiento("Excedente de Jornada");
         } else if (balance < -TOLERANCIA_BALANCE) {
@@ -448,6 +465,113 @@ public class AttendanceEngineService {
         } else {
             reg.setEstadoCumplimiento("Jornada Reglamentaria");
         }
+    }
+
+    /**
+     * PARTE B: CÁLCULO DEL RESUMEN INDIVIDUAL
+     * Calcula la matriz de 4 pilares y métricas consolidadas sobre el listado del trabajador.
+     */
+    public ResumenIndividualDto calcularResumenIndividual(List<RegistroAsistencia> lista) {
+        ResumenIndividualDto dto = new ResumenIndividualDto();
+        if (lista == null || lista.isEmpty()) {
+            return dto;
+        }
+
+        String primerEmpId = lista.get(0).getEmpId();
+        String primerNombre = (lista.get(0).getNombres() != null ? lista.get(0).getNombres() : "") + " " +
+                              (lista.get(0).getApellidos() != null ? lista.get(0).getApellidos() : "");
+        dto.setEmpId(primerEmpId);
+        dto.setNombreCompleto(primerNombre.trim());
+
+        int diasConRegistro = 0;
+        int tardanzasIngresoDias = 0;
+        int totalMinutosTardanza = 0;
+        int totalEsperadoIngreso = 0;
+        int noRegistraIngreso = 0;
+        int totalEsperadoSalidaRefrigerio = 0;
+        int noRegistraSalidaRefrigerio = 0;
+        int totalEsperadoRetornoRefrigerio = 0;
+        int noRegistraRetornoRefrigerio = 0;
+        int totalEsperadoSalidaFinal = 0;
+        int noRegistraSalidaFinal = 0;
+        int diasConMarcacionesFueraDeRango = 0;
+
+        for (RegistroAsistencia r : lista) {
+            LocalDate f = r.getFecha();
+            if (f == null) continue;
+            DayOfWeek dow = f.getDayOfWeek();
+            if (dow == DayOfWeek.SUNDAY) {
+                continue; // Domingos no son laborables
+            }
+
+            boolean esSabado = (dow == DayOfWeek.SATURDAY);
+
+            // Días con registro (al menos 1 marcación)
+            boolean tieneMarcacion = (r.getNumMarcaciones() != null && r.getNumMarcaciones() > 0)
+                    || r.getHoraEntrada() != null || r.getHoraSalida() != null
+                    || (r.getHorasCrudas() != null && !r.getHorasCrudas().trim().isEmpty());
+            if (tieneMarcacion) {
+                diasConRegistro++;
+            }
+
+            // Tardanza de ingreso
+            if (r.getMinutosTardanza() != null && r.getMinutosTardanza() > 0) {
+                tardanzasIngresoDias++;
+                totalMinutosTardanza += r.getMinutosTardanza().intValue();
+            }
+
+            // Pilar 1: Ingreso (Esperado de Lunes a Sábado)
+            totalEsperadoIngreso++;
+            if (r.getHoraEntrada() == null) {
+                noRegistraIngreso++;
+            }
+
+            // Pilares 2, 3 y 4 (Solo esperados de Lunes a Viernes)
+            if (!esSabado) {
+                // Pilar 2: Salida a refrigerio
+                totalEsperadoSalidaRefrigerio++;
+                if (r.getInicioAlmuerzo() == null) {
+                    noRegistraSalidaRefrigerio++;
+                }
+
+                // Pilar 3: Retorno de refrigerio
+                totalEsperadoRetornoRefrigerio++;
+                if (r.getFinAlmuerzo() == null) {
+                    noRegistraRetornoRefrigerio++;
+                }
+
+                // Pilar 4: Salida final
+                totalEsperadoSalidaFinal++;
+                if (r.getHoraSalida() == null) {
+                    noRegistraSalidaFinal++;
+                }
+            }
+
+            // Marcaciones fuera de rango
+            if (r.getOtrasMarcaciones() != null && !r.getOtrasMarcaciones().trim().isEmpty()) {
+                diasConMarcacionesFueraDeRango++;
+            }
+        }
+
+        dto.setDiasConRegistro(diasConRegistro);
+        dto.setTardanzasIngresoDias(tardanzasIngresoDias);
+        dto.setTotalMinutosTardanza(totalMinutosTardanza);
+
+        dto.setTotalEsperadoIngreso(totalEsperadoIngreso);
+        dto.setNoRegistraIngreso(noRegistraIngreso);
+
+        dto.setTotalEsperadoSalidaRefrigerio(totalEsperadoSalidaRefrigerio);
+        dto.setNoRegistraSalidaRefrigerio(noRegistraSalidaRefrigerio);
+
+        dto.setTotalEsperadoRetornoRefrigerio(totalEsperadoRetornoRefrigerio);
+        dto.setNoRegistraRetornoRefrigerio(noRegistraRetornoRefrigerio);
+
+        dto.setTotalEsperadoSalidaFinal(totalEsperadoSalidaFinal);
+        dto.setNoRegistraSalidaFinal(noRegistraSalidaFinal);
+
+        dto.setDiasConMarcacionesFueraDeRango(diasConMarcacionesFueraDeRango);
+
+        return dto;
     }
 }
 

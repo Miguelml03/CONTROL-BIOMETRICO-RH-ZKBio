@@ -51,6 +51,7 @@ public class RegistroAsistenciaDto {
     private Boolean almuerzoImputado;
     private String estadoJustificacion;
     private String observacionDoctor;
+    private String otrasMarcaciones;
     private Long minutosTardanzaOriginal;
     private Double balanceJornadaOriginal;
 
@@ -133,6 +134,9 @@ public class RegistroAsistenciaDto {
 
     public String getObservacionDoctor() { return observacionDoctor; }
     public void setObservacionDoctor(String observacionDoctor) { this.observacionDoctor = observacionDoctor; }
+
+    public String getOtrasMarcaciones() { return otrasMarcaciones; }
+    public void setOtrasMarcaciones(String otrasMarcaciones) { this.otrasMarcaciones = otrasMarcaciones; }
 
     public Long getMinutosTardanzaOriginal() { return minutosTardanzaOriginal; }
     public void setMinutosTardanzaOriginal(Long minutosTardanzaOriginal) { this.minutosTardanzaOriginal = minutosTardanzaOriginal; }

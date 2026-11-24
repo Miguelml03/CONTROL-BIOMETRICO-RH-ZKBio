@@ -203,6 +203,7 @@ public class DashboardKpiService {
         double totalHorasDeficit = 0.0;
 
         for (RegistroAsistencia r : registros) {
+            boolean esSabado = r.getFecha() != null && r.getFecha().getDayOfWeek() == DayOfWeek.SATURDAY;
             String est = r.getEstadoCumplimiento() != null ? r.getEstadoCumplimiento().trim() : "";
             if ("Excedente de Jornada".equalsIgnoreCase(est)) {
                 countExcedente++;
@@ -214,14 +215,17 @@ public class DashboardKpiService {
                 countIncompleto++;
             }
 
-            if (r.getHorasEfectivasDecimal() != null) {
-                totalHorasEfectivas += r.getHorasEfectivasDecimal();
-            }
-            if (r.getBalanceJornada() != null) {
-                if (r.getBalanceJornada() > 0) {
-                    totalHorasExtra += r.getBalanceJornada();
-                } else if (r.getBalanceJornada() < 0) {
-                    totalHorasDeficit += Math.abs(r.getBalanceJornada());
+            // Excluir sábados de las sumatorias de horas trabajadas, excedentes y déficits de Lunes a Viernes
+            if (!esSabado) {
+                if (r.getHorasEfectivasDecimal() != null) {
+                    totalHorasEfectivas += r.getHorasEfectivasDecimal();
+                }
+                if (r.getBalanceJornada() != null) {
+                    if (r.getBalanceJornada() > 0) {
+                        totalHorasExtra += r.getBalanceJornada();
+                    } else if (r.getBalanceJornada() < 0) {
+                        totalHorasDeficit += Math.abs(r.getBalanceJornada());
+                    }
                 }
             }
         }

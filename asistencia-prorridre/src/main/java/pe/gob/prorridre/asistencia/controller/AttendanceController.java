@@ -6,6 +6,7 @@ import pe.gob.prorridre.asistencia.dto.EditarAsistenciaRequestDto;
 import pe.gob.prorridre.asistencia.dto.ImportResultDto;
 import pe.gob.prorridre.asistencia.dto.JustificarRequestDto;
 import pe.gob.prorridre.asistencia.dto.RegistroAsistenciaDto;
+import pe.gob.prorridre.asistencia.dto.ResumenIndividualDto;
 import pe.gob.prorridre.asistencia.dto.ResumenKpiDto;
 import pe.gob.prorridre.asistencia.model.RegistroAsistencia;
 import pe.gob.prorridre.asistencia.service.AttendanceEngineService;
@@ -83,6 +84,38 @@ public class AttendanceController {
     public ResponseEntity<ResumenKpiDto> resumen(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         return ResponseEntity.ok(importService.calcularResumen(fecha));
+    }
+
+    /**
+     * GET /api/v1/asistencia/resumen-individual
+     * Tabla de RESUMEN INDIVIDUAL con métricas de los 4 pilares y tardanzas
+     * para el trabajador y período filtrado.
+     */
+    @GetMapping("/resumen-individual")
+    public ResponseEntity<ResumenIndividualDto> resumenIndividual(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            @RequestParam(required = false) String empId,
+            @RequestParam(required = false) String departamento) {
+
+        List<RegistroAsistencia> registros;
+        if (fechaInicio != null && fechaFin != null) {
+            if (empId != null && !empId.trim().isEmpty()) {
+                registros = registroRepo.findByEmpIdAndFechaBetweenOrderByFechaAsc(empId.trim(), fechaInicio, fechaFin);
+            } else if (departamento != null && !departamento.trim().isEmpty()) {
+                registros = registroRepo.findByFechaBetweenAndDepartamentoIgnoreCaseOrderByFechaAscApellidosAsc(fechaInicio, fechaFin, departamento.trim());
+            } else {
+                registros = registroRepo.findByFechaBetweenOrderByFechaDescDepartamentoAscApellidosAsc(fechaInicio, fechaFin);
+            }
+        } else if (empId != null && !empId.trim().isEmpty()) {
+            registros = registroRepo.findByEmpIdOrderByFechaDesc(empId.trim());
+        } else if (departamento != null && !departamento.trim().isEmpty()) {
+            registros = registroRepo.findByDepartamentoIgnoreCaseOrderByFechaDescApellidosAsc(departamento.trim());
+        } else {
+            registros = registroRepo.findAllByOrderByFechaDescApellidosAsc();
+        }
+
+        return ResponseEntity.ok(engineService.calcularResumenIndividual(registros));
     }
 
     /**
